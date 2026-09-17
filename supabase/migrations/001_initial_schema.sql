@@ -75,12 +75,12 @@ CREATE TABLE IF NOT EXISTS media (
 );
 
 -- Create indexes
-CREATE INDEX idx_events_slug ON events(slug);
-CREATE INDEX idx_events_event_date ON events(event_date);
-CREATE INDEX idx_event_registrations_user ON event_registrations(user_id);
-CREATE INDEX idx_event_registrations_event ON event_registrations(event_id);
-CREATE INDEX idx_contact_messages_email ON contact_messages(email);
-CREATE INDEX idx_media_type ON media(type);
+CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug);
+CREATE INDEX IF NOT EXISTS idx_events_event_date ON events(event_date);
+CREATE INDEX IF NOT EXISTS idx_event_registrations_user ON event_registrations(user_id);
+CREATE INDEX IF NOT EXISTS idx_event_registrations_event ON event_registrations(event_id);
+CREATE INDEX IF NOT EXISTS idx_contact_messages_email ON contact_messages(email);
+CREATE INDEX IF NOT EXISTS idx_media_type ON media(type);
 
 -- Enable Row Level Security
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -91,26 +91,37 @@ ALTER TABLE newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE media ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for profiles
+DROP POLICY IF EXISTS "Users can view all profiles" ON profiles;
+DROP POLICY IF EXISTS "Users can update their own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can insert their own profile" ON profiles;
 CREATE POLICY "Users can view all profiles" ON profiles FOR SELECT USING (true);
 CREATE POLICY "Users can update their own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "Users can insert their own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- RLS Policies for events
+DROP POLICY IF EXISTS "Anyone can view published events" ON events;
 CREATE POLICY "Anyone can view published events" ON events FOR SELECT USING (true);
 
 -- RLS Policies for event_registrations
+DROP POLICY IF EXISTS "Users can view their own registrations" ON event_registrations;
+DROP POLICY IF EXISTS "Authenticated users can register for events" ON event_registrations;
+DROP POLICY IF EXISTS "Users can update their own registrations" ON event_registrations;
 CREATE POLICY "Users can view their own registrations" ON event_registrations FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Authenticated users can register for events" ON event_registrations FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update their own registrations" ON event_registrations FOR UPDATE USING (auth.uid() = user_id);
 
 -- RLS Policies for contact_messages
+DROP POLICY IF EXISTS "Anyone can submit contact messages" ON contact_messages;
 CREATE POLICY "Anyone can submit contact messages" ON contact_messages FOR INSERT WITH CHECK (true);
 
 -- RLS Policies for newsletter_subscribers
+DROP POLICY IF EXISTS "Anyone can subscribe to newsletter" ON newsletter_subscribers;
+DROP POLICY IF EXISTS "Subscribers can view their own subscription" ON newsletter_subscribers;
 CREATE POLICY "Anyone can subscribe to newsletter" ON newsletter_subscribers FOR INSERT WITH CHECK (true);
 CREATE POLICY "Subscribers can view their own subscription" ON newsletter_subscribers FOR SELECT USING (true);
 
 -- RLS Policies for media
+DROP POLICY IF EXISTS "Anyone can view published media" ON media;
 CREATE POLICY "Anyone can view published media" ON media FOR SELECT USING (published = true);
 
 -- Function to automatically update updated_at timestamp
@@ -123,16 +134,19 @@ END;
 $$ language 'plpgsql';
 
 -- Triggers for updating timestamps
+DROP TRIGGER IF EXISTS update_profiles_timestamp ON profiles;
 CREATE TRIGGER update_profiles_timestamp
   BEFORE UPDATE ON profiles
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_events_timestamp ON events;
 CREATE TRIGGER update_events_timestamp
   BEFORE UPDATE ON events
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_media_timestamp ON media;
 CREATE TRIGGER update_media_timestamp
   BEFORE UPDATE ON media
   FOR EACH ROW

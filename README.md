@@ -209,19 +209,21 @@ Features include:
 
 ## 🚀 Deployment
 
-### Vercel (Recommended)
+### GitHub Pages
 
-1. Push your code to GitHub
-2. Connect your repo to Vercel
-3. Add environment variables in Vercel settings
-4. Deploy
+This repository includes a GitHub Actions workflow for GitHub Pages.
 
-### Other Platforms
+1. In the repository settings, add these Actions secrets under **Secrets and variables > Actions**:
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_ANON_KEY`
+2. Under **Settings > Pages**, set the source to **GitHub Actions**.
+3. Push to the `master` branch or run the **Deploy to GitHub Pages** workflow manually.
 
-For other hosting platforms (Netlify, Render, etc), follow similar steps:
-1. Set environment variables
-2. Run `npm run build`
-3. Deploy the `dist` folder
+The site will be available at `https://aaron3akizza.github.io/TYM-WEBSITE/`.
+
+### Vercel or Other Hosts
+
+Add the two `VITE_SUPABASE_*` environment variables in the host settings, run `npm run build`, and deploy the generated `dist` folder.
 
 ## 📖 Pages
 

@@ -72,11 +72,13 @@ VALUES
     'Multiple Community Locations',
     true,
     CURRENT_DATE + INTERVAL '8 days'
-  );
+  )
+ON CONFLICT (slug) DO NOTHING;
 
 -- Seed sample media
 INSERT INTO media (title, description, type, media_url, published)
-VALUES
+SELECT seed.title, seed.description, seed.type, seed.media_url, seed.published
+FROM (VALUES
   (
     'The Power of Transformation',
     'A powerful sermon about how God transforms us from the inside out.',
@@ -104,4 +106,11 @@ VALUES
     'video',
     'https://www.youtube.com/embed/dQw4w9WgXcQ',
     true
-  );
+  )
+) AS seed(title, description, type, media_url, published)
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM media
+  WHERE media.title = seed.title
+    AND media.media_url = seed.media_url
+);
