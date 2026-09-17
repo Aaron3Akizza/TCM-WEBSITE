@@ -1,78 +1,200 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Cormorant+Garamond:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Base ─────────────────────────────────────────────── */
 @layer base {
-  * {
-    @apply box-border;
-  }
+  *, *::before, *::after { box-sizing: border-box; }
 
-  html {
-    scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
 
   body {
-    @apply bg-tym-bg text-tym-slate font-dm-sans;
+    @apply bg-tym-bg text-tym-slate font-dm-sans antialiased;
+    font-feature-settings: 'kern' 1, 'liga' 1;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-dm-sans font-semibold text-tym-slate;
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-dm-sans font-bold leading-tight tracking-tight;
   }
 
-  h1 {
-    @apply text-5xl md:text-6xl font-bold;
-  }
-
-  h2 {
-    @apply text-3xl md:text-4xl font-semibold;
-  }
-
-  h3 {
-    @apply text-2xl md:text-3xl font-semibold;
-  }
-
-  p {
-    @apply leading-relaxed;
-  }
-
-  a {
-    @apply transition-colors;
-  }
-
-  button,
-  input,
-  select,
-  textarea {
-    @apply font-dm-sans;
-  }
-
-  input::placeholder,
-  textarea::placeholder {
-    @apply text-gray-500;
-  }
+  #root { @apply w-full min-h-screen flex flex-col; }
 }
 
+/* ─── Components ────────────────────────────────────────── */
 @layer components {
+
+  /* Layout */
   .container-tym {
     @apply max-w-7xl mx-auto px-4 md:px-8;
   }
-
   .section-padding {
-    @apply py-16 md:py-24;
+    @apply py-20 md:py-28;
   }
 
+  /* Typography */
+  .label-tag {
+    @apply inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-tym-crimson;
+  }
+  .label-tag::before {
+    content: '';
+    @apply block w-6 h-px bg-tym-crimson;
+  }
+
+  .display-heading {
+    @apply font-black text-5xl md:text-7xl leading-none tracking-tighter;
+  }
+
+  .serif-accent {
+    font-family: 'Cormorant Garamond', serif;
+    @apply italic font-semibold;
+  }
+
+  /* Crimson underline accent */
   .underline-crimson {
-    @apply relative after:absolute after:bottom-0 after:left-0 after:h-1 after:bg-tym-crimson after:w-full;
+    @apply relative inline-block;
+  }
+  .underline-crimson::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-full h-1 bg-tym-crimson rounded-full;
+  }
+
+  /* Cards */
+  .card-base {
+    @apply bg-white rounded-2xl border border-gray-100 shadow-sm
+           transition-all duration-300
+           hover:shadow-xl hover:-translate-y-1;
+  }
+
+  .card-dark {
+    @apply bg-tym-slate/80 backdrop-blur rounded-2xl border border-white/10
+           transition-all duration-300
+           hover:bg-tym-slate hover:shadow-xl hover:-translate-y-1;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2
+           font-bold tracking-wide rounded-full
+           transition-all duration-200
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+  }
+  .btn-primary {
+    @apply btn bg-tym-crimson text-white
+           hover:bg-red-700 active:scale-95
+           focus-visible:ring-tym-crimson;
+  }
+  .btn-outline-light {
+    @apply btn border-2 border-white text-white
+           hover:bg-white hover:text-tym-slate active:scale-95;
+  }
+  .btn-outline-dark {
+    @apply btn border-2 border-tym-slate text-tym-slate
+           hover:bg-tym-slate hover:text-white active:scale-95;
+  }
+  .btn-ghost {
+    @apply btn text-tym-crimson hover:bg-red-50 active:scale-95;
+  }
+
+  /* Input */
+  .input-base {
+    @apply w-full px-4 py-3 rounded-xl border-2 border-gray-200
+           bg-white text-tym-slate placeholder-gray-400
+           font-dm-sans text-sm
+           transition-colors duration-200
+           focus:outline-none focus:border-tym-crimson
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Section divider */
+  .divider-crimson {
+    @apply w-12 h-1 bg-tym-crimson rounded-full;
+  }
+
+  /* Gradient overlays */
+  .overlay-dark {
+    @apply absolute inset-0 bg-gradient-to-t from-tym-slate/80 via-tym-slate/30 to-transparent;
+  }
+  .overlay-bottom {
+    @apply absolute inset-0 bg-gradient-to-t from-tym-slate/70 to-transparent;
+  }
+
+  /* Nav link */
+  .nav-link {
+    @apply relative text-sm font-semibold text-tym-slate
+           transition-colors duration-200 hover:text-tym-crimson
+           after:absolute after:bottom-[-4px] after:left-0
+           after:w-0 after:h-0.5 after:bg-tym-crimson after:rounded-full
+           after:transition-all after:duration-300
+           hover:after:w-full;
+  }
+  .nav-link-active {
+    @apply text-tym-crimson after:w-full;
   }
 }
 
-#root {
-  @apply w-full min-h-screen flex flex-col;
+/* ─── Utilities ─────────────────────────────────────────── */
+@layer utilities {
+
+  /* Animated gradient text */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #DC2626 0%, #991B1B 100%);
+  }
+
+  /* Glass morphism */
+  .glass {
+    backdrop-filter: blur(16px) saturate(180%);
+    background-color: rgba(248, 249, 250, 0.85);
+  }
+  .glass-dark {
+    backdrop-filter: blur(16px) saturate(180%);
+    background-color: rgba(30, 41, 59, 0.9);
+  }
+
+  /* Noise texture overlay */
+  .bg-noise {
+    position: relative;
+  }
+  .bg-noise::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  /* Smooth fade-up animation */
+  .animate-fade-up {
+    animation: fadeUp 0.6s ease forwards;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease forwards;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* Stagger children */
+  .stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger > *:nth-child(2) { animation-delay: 100ms; }
+  .stagger > *:nth-child(3) { animation-delay: 200ms; }
+  .stagger > *:nth-child(4) { animation-delay: 300ms; }
+
+  /* Red glow */
+  .glow-crimson {
+    box-shadow: 0 0 40px rgba(220, 38, 38, 0.25);
+  }
+
+  /* Aspect ratios */
+  .aspect-portrait { aspect-ratio: 3/4; }
+  .aspect-cinema   { aspect-ratio: 21/9; }
 }

@@ -2,90 +2,105 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
-import { useEvents } from '../hooks/useEvents';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
-import { Card } from '../components/ui/Card';
-import { SectionHeading } from '../components/ui/SectionHeading';
-import { Calendar, MapPin, Clock } from 'lucide-react';
-import { formatDate, formatTime } from '../lib/utils';
+import { useEvents } from '../hooks/useEvents';
+import { formatTime } from '../lib/utils';
+import { Calendar, Clock, MapPin, ArrowRight } from 'lucide-react';
 
 export const Events: React.FC = () => {
-  const { events, loading, error } = useEvents();
+  const { events, loading } = useEvents();
 
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow pt-20">
-        <div className="py-12 bg-tym-bg">
-          <div className="max-w-7xl mx-auto px-4 md:px-8">
-            <SectionHeading
-              title="Upcoming Events"
-              subtitle="Join us for worship, fellowship, discipleship and community impact."
-              centered={true}
-            />
+
+      {/* Banner */}
+      <header className="relative pt-[72px]">
+        <div className="relative h-64 md:h-72 bg-tym-slate overflow-hidden">
+          <div className="absolute inset-0 opacity-5 pointer-events-none"
+            style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+          <div className="relative z-10 h-full flex items-center max-w-7xl mx-auto px-4 md:px-8">
+            <div>
+              <span className="label-tag [&::before]:bg-white text-white mb-3 block">Calendar</span>
+              <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight">Upcoming Events</h1>
+            </div>
           </div>
         </div>
+      </header>
 
-        <div className="py-24 bg-white">
-          <div className="max-w-7xl mx-auto px-4 md:px-8">
-            {loading ? (
-              <LoadingSpinner />
-            ) : error ? (
-              <div className="text-center">
-                <p className="text-red-500">Error loading events: {error}</p>
+      <main className="flex-grow bg-tym-bg">
+        <div className="max-w-5xl mx-auto px-4 md:px-8 py-16">
+          {loading ? (
+            <LoadingSpinner />
+          ) : events.length === 0 ? (
+            <div className="text-center py-24">
+              <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                <Calendar className="w-7 h-7 text-gray-300" />
               </div>
-            ) : events.length === 0 ? (
-              <div className="text-center">
-                <p className="text-gray-600 text-lg">
-                  No upcoming events at this time. Check back soon!
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-6">
-                {events.map((event) => (
-                  <Link key={event.id} to={`/events/${event.slug}`}>
-                    <Card className="p-6 cursor-pointer hover:shadow-lg transition-all duration-300 border-l-4 border-l-transparent hover:border-l-tym-crimson">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
-                        <div className="md:col-span-2">
-                          <h3 className="text-2xl font-bold text-tym-slate mb-2 hover:text-tym-crimson transition-colors">
+              <h3 className="text-xl font-bold text-tym-slate mb-2">No upcoming events</h3>
+              <p className="text-gray-400 text-sm">Check back soon — something is always brewing.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-5">
+              {events.map((event) => (
+                <Link
+                  key={event.id}
+                  to={`/events/${event.slug}`}
+                  className="group block"
+                >
+                  <article className="bg-white rounded-2xl border border-gray-100 hover:border-tym-crimson/30 hover:shadow-xl transition-all duration-300 overflow-hidden">
+                    <div className="flex flex-col md:flex-row">
+                      {/* Date sidebar */}
+                      <div className="md:w-28 bg-tym-slate flex-shrink-0 flex flex-col items-center justify-center py-6 md:py-8 px-4">
+                        <span className="text-tym-crimson text-xs font-black uppercase tracking-widest mb-1">
+                          {new Date(event.event_date).toLocaleString('default', { month: 'short' })}
+                        </span>
+                        <span className="text-white text-4xl font-black leading-none">
+                          {new Date(event.event_date).getDate()}
+                        </span>
+                        <span className="text-white/40 text-xs mt-1">
+                          {new Date(event.event_date).getFullYear()}
+                        </span>
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-4">
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-tym-slate mb-2 group-hover:text-tym-crimson transition-colors duration-200">
                             {event.title}
                           </h3>
-                          <p className="text-gray-600 mb-4">
-                            {event.short_description}
-                          </p>
+                          {event.short_description && (
+                            <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 mb-3">
+                              {event.short_description}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap gap-4">
+                            {event.start_time && (
+                              <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                                <Clock className="w-3.5 h-3.5" />
+                                <span>{formatTime(event.start_time)}</span>
+                              </div>
+                            )}
+                            {event.location && (
+                              <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                                <MapPin className="w-3.5 h-3.5" />
+                                <span>{event.location}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-5 h-5 text-tym-crimson" />
-                            <span className="text-gray-700">
-                              {formatDate(event.event_date)}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-5 h-5 text-tym-crimson" />
-                            <span className="text-gray-700">
-                              {formatTime(event.start_time)} -{' '}
-                              {formatTime(event.end_time)}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="text-sm">
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-5 h-5 text-tym-crimson" />
-                            <span className="text-gray-700">
-                              {event.location}
-                            </span>
-                          </div>
+                        <div className="flex-shrink-0">
+                          <span className="inline-flex items-center gap-2 text-sm font-bold text-tym-crimson group-hover:gap-3 transition-all duration-200">
+                            View Details <ArrowRight className="w-4 h-4" />
+                          </span>
                         </div>
                       </div>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
+                    </div>
+                  </article>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </main>
       <Footer />

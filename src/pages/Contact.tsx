@@ -3,58 +3,29 @@ import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Card } from '../components/ui/Card';
-import { SectionHeading } from '../components/ui/SectionHeading';
+import { Mail, MapPin, Phone, Send, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export const Contact: React.FC = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
+  const [form,    setForm]    = useState({ name: '', email: '', phone: '', subject: '', message: '' });
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [error,   setError]   = useState('');
+
+  const update = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm((f) => ({ ...f, [field]: e.target.value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setSuccess('');
-
-    if (!name || !email || !subject || !message) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
     setLoading(true);
-
     try {
-      const { error: err } = await supabase.from('contact_messages').insert([
-        {
-          name,
-          email,
-          phone,
-          subject,
-          message,
-          status: 'unread',
-        },
-      ]);
-
-      if (err) {
-        setError(err.message);
-      } else {
-        setSuccess(
-          'Thank you for your message! We\'ll get back to you soon.'
-        );
-        setName('');
-        setEmail('');
-        setPhone('');
-        setSubject('');
-        setMessage('');
-      }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
+      const { error: err } = await supabase.from('contact_messages').insert([form]);
+      if (err) throw err;
+      setSuccess(true);
+      setForm({ name: '', email: '', phone: '', subject: '', message: '' });
+    } catch {
+      setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -63,99 +34,113 @@ export const Contact: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow pt-20">
-        <div className="py-12 bg-tym-bg">
-          <div className="max-w-7xl mx-auto px-4 md:px-8">
-            <SectionHeading
-              title="Get In Touch"
-              subtitle="We'd love to hear from you. Send us a message!"
-              centered={true}
-            />
+
+      {/* Banner */}
+      <header className="relative pt-[72px]">
+        <div className="relative h-56 md:h-72 bg-tym-slate overflow-hidden">
+          <div className="absolute inset-0 opacity-5 pointer-events-none"
+            style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+          <div className="relative z-10 h-full flex items-center max-w-7xl mx-auto px-4 md:px-8">
+            <div>
+              <span className="label-tag [&::before]:bg-white text-white mb-3 block">Reach Out</span>
+              <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight">Contact Us</h1>
+            </div>
           </div>
         </div>
+      </header>
 
-        <div className="py-24 bg-white">
-          <div className="max-w-2xl mx-auto px-4 md:px-8">
-            <Card>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Input
-                    label="Name"
-                    placeholder="Your name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    disabled={loading}
-                    required
-                  />
-                  <Input
-                    label="Email"
-                    type="email"
-                    placeholder="Your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
-                    required
-                  />
-                </div>
+      <main className="flex-grow bg-tym-bg">
+        <div className="max-w-6xl mx-auto px-4 md:px-8 py-16">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Input
-                    label="Phone (Optional)"
-                    type="tel"
-                    placeholder="Your phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    disabled={loading}
-                  />
-                  <Input
-                    label="Subject"
-                    placeholder="Message subject"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    disabled={loading}
-                    required
-                  />
-                </div>
+            {/* ── Contact info ── */}
+            <aside className="flex flex-col gap-6">
+              <div>
+                <h2 className="text-2xl font-black text-tym-slate mb-2">Get in Touch</h2>
+                <p className="text-gray-500 text-sm leading-relaxed">
+                  We'd love to hear from you. Reach out with questions,
+                  partnership inquiries, or to learn more about TCM.
+                </p>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-tym-slate mb-2">
-                    Message
-                  </label>
-                  <textarea
-                    placeholder="Your message"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    disabled={loading}
-                    required
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg font-dm-sans text-tym-slate placeholder-gray-500 focus:outline-none focus:border-tym-crimson transition-colors duration-200 resize-none"
-                    rows={6}
-                  />
-                </div>
-
-                {error && (
-                  <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-                    {error}
+              {[
+                { icon: Mail,    label: 'Email',    value: 'info@tcm.org',       href: 'mailto:info@tcm.org' },
+                { icon: Phone,   label: 'Phone',    value: '+256 700 000 000',   href: 'tel:+256700000000' },
+                { icon: MapPin,  label: 'Location', value: 'Uganda',             href: undefined },
+              ].map(({ icon: Icon, label, value, href }) => (
+                <div key={label} className="flex items-start gap-4 bg-white rounded-2xl p-5 border border-gray-100">
+                  <div className="w-10 h-10 rounded-xl bg-tym-crimson/10 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-5 h-5 text-tym-crimson" />
                   </div>
-                )}
-
-                {success && (
-                  <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-                    {success}
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-0.5">{label}</p>
+                    {href ? (
+                      <a href={href} className="font-semibold text-tym-slate hover:text-tym-crimson transition-colors text-sm">{value}</a>
+                    ) : (
+                      <p className="font-semibold text-tym-slate text-sm">{value}</p>
+                    )}
                   </div>
-                )}
+                </div>
+              ))}
+            </aside>
 
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="lg"
-                  isLoading={loading}
-                  disabled={loading}
-                  className="w-full"
-                >
-                  SEND MESSAGE
-                </Button>
-              </form>
-            </Card>
+            {/* ── Form ── */}
+            <div className="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm p-8 md:p-10">
+              {success ? (
+                <div className="flex flex-col items-center justify-center h-full text-center py-12 gap-4">
+                  <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                    <CheckCircle2 className="w-8 h-8 text-green-500" />
+                  </div>
+                  <h3 className="text-2xl font-black text-tym-slate">Message Sent!</h3>
+                  <p className="text-gray-500 max-w-sm">
+                    Thanks for reaching out. We'll get back to you as soon as possible.
+                  </p>
+                  <Button variant="ghost" size="md" onClick={() => setSuccess(false)}>
+                    Send Another
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <h2 className="text-xl font-black text-tym-slate mb-6">Send Us a Message</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <Input label="Full Name" placeholder="Your name" value={form.name}
+                      onChange={update('name')} required disabled={loading} />
+                    <Input label="Email" type="email" placeholder="your@email.com" value={form.email}
+                      onChange={update('email')} required disabled={loading} />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <Input label="Phone" placeholder="+256 700 000 000" value={form.phone}
+                      onChange={update('phone')} disabled={loading} />
+                    <Input label="Subject" placeholder="What's this about?" value={form.subject}
+                      onChange={update('subject')} required disabled={loading} />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-semibold text-tym-slate">
+                      Message <span className="text-tym-crimson">*</span>
+                    </label>
+                    <textarea
+                      rows={5}
+                      placeholder="Tell us how we can help..."
+                      value={form.message}
+                      onChange={update('message')}
+                      required
+                      disabled={loading}
+                      className="input-base resize-none"
+                    />
+                  </div>
+                  {error && (
+                    <p className="text-red-500 text-sm font-medium bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                      ⚠ {error}
+                    </p>
+                  )}
+                  <Button type="submit" variant="primary" size="lg" isLoading={loading}
+                    iconRight={<Send className="w-4 h-4" />} className="w-full md:w-auto">
+                    Send Message
+                  </Button>
+                </form>
+              )}
+            </div>
+
           </div>
         </div>
       </main>

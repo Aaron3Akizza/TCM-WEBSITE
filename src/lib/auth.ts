@@ -20,22 +20,6 @@ export async function signUp(
     return { user: null, error };
   }
 
-  // Create profile
-  if (data.user) {
-    const { error: profileError } = await supabase.from('profiles').insert([
-      {
-        id: data.user.id,
-        full_name: fullName,
-        email: email,
-        role: 'member',
-      },
-    ]);
-
-    if (profileError) {
-      return { user: null, error: profileError };
-    }
-  }
-
   return { user: data.user, error: null };
 }
 
