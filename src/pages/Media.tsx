@@ -42,6 +42,32 @@ export const Media: React.FC = () => {
           </div>
         </div>
 
+        {/* Ministry Photo Collage Banner */}
+        <div className="w-full bg-tym-slate">
+          <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
+            <p className="text-tym-crimson font-semibold text-sm uppercase tracking-widest mb-4 text-center">
+              In The Field
+            </p>
+            <div className="relative rounded-xl overflow-hidden shadow-2xl">
+              <img
+                src="/images/ministry-collage.jpg"
+                alt="Transform Christian Ministry in action — youth gatherings, worship and leadership"
+                className="w-full object-cover"
+                style={{ maxHeight: '520px', objectPosition: 'center top' }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-tym-slate/70 via-transparent to-transparent" />
+              <div className="absolute bottom-6 left-6 right-6">
+                <h3 className="text-white text-2xl md:text-3xl font-bold mb-1">
+                  TCM in Action
+                </h3>
+                <p className="text-gray-300 text-sm md:text-base">
+                  Gathering, worshipping, leading — one generation at a time.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="py-24 bg-white">
           <div className="max-w-7xl mx-auto px-4 md:px-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
