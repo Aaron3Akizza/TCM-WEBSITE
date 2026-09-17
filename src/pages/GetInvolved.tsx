@@ -42,7 +42,7 @@ export const GetInvolved: React.FC = () => {
           <div className="max-w-7xl mx-auto px-4 md:px-8">
             <SectionHeading
               title="Get Involved"
-              subtitle="There's a place for you in the TYM community."
+              subtitle="There's a place for you in the TCM community."
               centered={true}
             />
           </div>

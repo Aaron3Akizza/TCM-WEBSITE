@@ -12,10 +12,15 @@ export const Footer: React.FC = () => {
         <div className="py-16 grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Organization Info */}
           <div>
-            <h3 className="text-xl font-700 mb-4">TYM</h3>
-            <p className="text-sm text-gray-300 mb-4">
-              Transform Youth Ministry
-            </p>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-tym-crimson text-white font-black text-sm leading-none flex-shrink-0">
+                TCM
+              </div>
+              <div className="flex flex-col leading-tight">
+                <span className="font-black text-base text-white tracking-wide">TRANSFORM</span>
+                <span className="font-semibold text-xs text-red-300 tracking-widest uppercase">Christian Ministry</span>
+              </div>
+            </div>
             <p className="text-sm text-gray-300 leading-relaxed">
               Raising a generation rooted in Christ, walking in purpose and
               transforming their communities for the Kingdom.
@@ -132,7 +137,7 @@ export const Footer: React.FC = () => {
                 <Play className="w-5 h-5" />
               </a>
               <a
-                href="mailto:info@tym.org"
+                href="mailto:info@tcm.org"
                 className="p-2 rounded-full bg-gray-700 hover:bg-tym-crimson transition-colors"
                 aria-label="Email"
               >
@@ -148,7 +153,7 @@ export const Footer: React.FC = () => {
         {/* Bottom Footer */}
         <div className="py-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-gray-300">
-            © {currentYear} Transform Youth Ministry (TYM). All Rights Reserved.
+            © {currentYear} Transform Christian Ministry (TCM). All Rights Reserved.
           </p>
           <div className="flex gap-6 text-sm text-gray-300">
             <a href="#" className="hover:text-tym-crimson transition-colors">

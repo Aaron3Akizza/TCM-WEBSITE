@@ -11,7 +11,7 @@ export const About: React.FC = () => {
         <div className="py-12 bg-tym-bg">
           <div className="max-w-7xl mx-auto px-4 md:px-8">
             <SectionHeading
-              title="About Transform Youth Ministry"
+              title="About Transform Christian Ministry"
               centered={true}
             />
           </div>
@@ -19,12 +19,41 @@ export const About: React.FC = () => {
 
         <div className="py-24 bg-white">
           <div className="max-w-4xl mx-auto px-4 md:px-8">
+
+            {/* Leader Feature */}
+            <section className="mb-16">
+              <div className="flex flex-col md:flex-row gap-10 items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-56 h-64 rounded-xl overflow-hidden shadow-lg">
+                    <img
+                      src="/images/leader-portrait.jpg"
+                      alt="TCM ministry leader"
+                      className="w-full h-full object-cover object-top"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-tym-crimson font-semibold text-sm uppercase tracking-wider mb-2">
+                    Leadership
+                  </p>
+                  <h2 className="text-3xl font-bold text-tym-slate mb-4">
+                    Rooted in Purpose
+                  </h2>
+                  <p className="text-lg text-gray-600 leading-relaxed">
+                    Our leaders walk alongside young people with vision, faith, and
+                    dedication — carrying the Transform Christian Ministry badge
+                    not just on their chest, but in how they live and serve every
+                    day.
+                  </p>
+                </div>
+              </div>
+            </section>
             <section className="mb-16">
               <h2 className="text-3xl font-bold text-tym-slate mb-6">
                 Who We Are
               </h2>
               <p className="text-lg text-gray-600 mb-4 leading-relaxed">
-                Transform Youth Ministry (TYM) is a community of young people
+                Transform Christian Ministry (TCM) is a community of young people
                 passionate about Jesus and committed to becoming transformed
                 leaders who influence every sphere of life. We believe that the
                 next generation has a critical role to play in God's redemptive
@@ -32,7 +61,7 @@ export const About: React.FC = () => {
               </p>
               <p className="text-lg text-gray-600 leading-relaxed">
                 Founded on the conviction that young people can encounter God
-                deeply and experience genuine transformation, TYM exists to
+                deeply and experience genuine transformation, TCM exists to
                 create spaces where this encounter and transformation can happen
                 in authentic community.
               </p>
@@ -92,7 +121,7 @@ export const About: React.FC = () => {
                 Get Connected
               </h2>
               <p className="text-lg text-gray-600 mb-6">
-                Want to learn more about TYM or get involved? We'd love to
+                Want to learn more about TCM or get involved? We'd love to
                 connect with you.
               </p>
             </section>

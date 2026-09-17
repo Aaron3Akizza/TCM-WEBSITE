@@ -39,18 +39,37 @@ export const VisionSection: React.FC = () => {
     <div className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         {/* Vision Statement */}
-        <div className="text-center mb-16">
-          <SectionHeading
-            label="OUR VISION"
-            title="We Are a Christian Ministry Igniting the New Creation"
-            subtitle="Into Transformed Leaders"
-            centered={true}
-          />
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto mt-6">
-            We believe that God has a plan to raise up transformed leaders who
-            will see His Kingdom established in every sphere of society. This is
-            our calling and our vision.
-          </p>
+        <div className="flex flex-col md:flex-row items-center gap-12 mb-16">
+          {/* Portrait */}
+          <div className="flex-shrink-0 w-full md:w-64">
+            <div className="relative rounded-xl overflow-hidden shadow-xl h-80">
+              <img
+                src="/images/leader-portrait.jpg"
+                alt="TCM leader"
+                className="w-full h-full object-cover object-top"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-tym-slate/60 to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <span className="text-white text-xs font-semibold uppercase tracking-widest bg-tym-crimson px-2 py-1 rounded">
+                  Transform Christian Ministry
+                </span>
+              </div>
+            </div>
+          </div>
+          {/* Text */}
+          <div className="flex-grow text-center md:text-left">
+            <SectionHeading
+              label="OUR VISION"
+              title="We Are a Christian Ministry Igniting the New Creation"
+              subtitle="Into Transformed Leaders"
+              centered={false}
+            />
+            <p className="text-lg text-gray-600 max-w-2xl mt-6">
+              We believe that God has a plan to raise up transformed leaders who
+              will see His Kingdom established in every sphere of society. This is
+              our calling and our vision.
+            </p>
+          </div>
         </div>
 
         {/* Pillars */}

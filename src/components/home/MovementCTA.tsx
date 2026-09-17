@@ -11,12 +11,12 @@ export const MovementCTA: React.FC = () => {
         </h2>
         <p className="text-lg text-gray-600 mb-12 leading-relaxed">
           Together, let's see a generation awakened, equipped and sent out as
-          transformed leaders for the glory of God. Join TYM and be part of
+          transformed leaders for the glory of God. Join TCM and be part of
           something greater than yourself.
         </p>
         <Link to="/get-involved">
           <Button variant="primary" size="lg">
-            JOIN TYM →
+            JOIN TCM →
           </Button>
         </Link>
       </div>

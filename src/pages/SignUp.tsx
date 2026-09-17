@@ -59,7 +59,7 @@ export const SignUp: React.FC = () => {
       <main className="flex-grow pt-20 bg-tym-bg flex items-center justify-center py-12">
         <Card className="w-full max-w-md">
           <h1 className="text-3xl font-bold text-tym-slate mb-6 text-center">
-            Join TYM
+            Join TCM
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
