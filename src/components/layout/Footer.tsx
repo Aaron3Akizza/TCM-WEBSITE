@@ -2,6 +2,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Share2, AtSign, PlayCircle, Mail, MapPin, Phone, ArrowRight } from 'lucide-react';
 
+/* Inline logo mark — same symbol as Navbar */
+const TCMLogo: React.FC<{ className?: string }> = ({ className = '' }) => (
+  <svg viewBox="0 0 48 46" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true">
+    <path fill="#DC2626" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z" />
+    <path d="M20 2 L14 12 L22 12 L16 22" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+  </svg>
+);
+
 const quickLinks = [
   { label: 'About',        path: '/about' },
   { label: 'Vision',       path: '/vision' },
@@ -34,16 +42,11 @@ export const Footer: React.FC = () => {
 
           {/* Brand column */}
           <div className="lg:col-span-1">
-            {/* Logo */}
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-xl bg-tym-crimson flex items-center justify-center font-black text-xs text-white">
-                TCM
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="font-black text-[14px] tracking-widest uppercase">Transform</span>
-                <span className="font-semibold text-[10px] tracking-widest text-red-300 uppercase">Christian Ministry</span>
-              </div>
-            </div>
+            {/* Logo: symbol + TCM wordmark only */}
+            <Link to="/" className="flex items-center gap-2.5 mb-5 group w-fit">
+              <TCMLogo className="w-8 h-8 opacity-90 group-hover:opacity-100 transition-opacity" />
+              <span className="font-black text-[17px] tracking-[0.12em] text-white select-none">TCM</span>
+            </Link>
 
             <p className="text-white/50 text-sm leading-relaxed mb-6">
               Raising a generation rooted in Christ, walking in purpose and

@@ -27,7 +27,7 @@ export const Vision: React.FC = () => {
       <Navbar />
 
       {/* Banner */}
-      <header className="relative pt-[72px]">
+      <header className="relative pt-[68px]">
         <div className="relative h-64 md:h-80 bg-tym-slate overflow-hidden">
           <img
             src="/images/ministry-activity.jpg"

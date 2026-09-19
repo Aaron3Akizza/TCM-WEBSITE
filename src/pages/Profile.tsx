@@ -23,7 +23,7 @@ export const Profile: React.FC = () => {
   if (loading) return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow pt-[72px]"><LoadingSpinner /></main>
+      <main className="flex-grow pt-[68px]"><LoadingSpinner /></main>
       <Footer />
     </div>
   );
@@ -42,7 +42,7 @@ export const Profile: React.FC = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
 
-      <main className="flex-grow pt-[72px] bg-tym-bg">
+      <main className="flex-grow pt-[68px] bg-tym-bg">
         {/* Header */}
         <div className="bg-tym-slate py-14 relative overflow-hidden">
           <div className="absolute inset-0 opacity-5 pointer-events-none"

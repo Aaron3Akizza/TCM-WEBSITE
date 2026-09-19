@@ -49,7 +49,7 @@ export const SignUp: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow pt-[72px] bg-tym-bg flex items-center justify-center py-16 px-4">
+      <main className="flex-grow pt-[68px] bg-tym-bg flex items-center justify-center py-16 px-4">
         <div className="w-full max-w-md">
 
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">

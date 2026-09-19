@@ -50,7 +50,7 @@ export const GetInvolved: React.FC = () => {
       <Navbar />
 
       {/* Banner */}
-      <header className="relative pt-[72px]">
+      <header className="relative pt-[68px]">
         <div className="relative h-64 md:h-80 bg-tym-slate overflow-hidden">
           <img src="/images/hero-group.jpg" alt="TCM community"
             className="absolute inset-0 w-full h-full object-cover object-center opacity-25" />

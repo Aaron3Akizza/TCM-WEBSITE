@@ -30,7 +30,7 @@ export const About: React.FC = () => {
       <Navbar />
 
       {/* ── Hero banner ── */}
-      <header className="relative pt-[72px] overflow-hidden">
+      <header className="relative pt-[68px] overflow-hidden">
         <div className="relative h-64 md:h-80 bg-tym-slate">
           <img
             src="/images/hero-group.jpg"

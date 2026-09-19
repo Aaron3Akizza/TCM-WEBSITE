@@ -13,7 +13,8 @@ export const Home: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow pt-20">
+      <main className="flex-grow">
+        {/* Hero is full-screen and handles its own top padding */}
         <Hero />
         <IdentityStrip />
         <AboutSection />

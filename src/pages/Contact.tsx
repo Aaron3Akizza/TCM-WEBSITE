@@ -36,7 +36,7 @@ export const Contact: React.FC = () => {
       <Navbar />
 
       {/* Banner */}
-      <header className="relative pt-[72px]">
+      <header className="relative pt-[68px]">
         <div className="relative h-56 md:h-72 bg-tym-slate overflow-hidden">
           <div className="absolute inset-0 opacity-5 pointer-events-none"
             style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />

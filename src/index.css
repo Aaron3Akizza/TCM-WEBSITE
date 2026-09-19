@@ -19,6 +19,9 @@
     @apply font-dm-sans font-bold leading-tight tracking-tight;
   }
 
+  /* Ensure anchored sections are never hidden under the fixed navbar */
+  [id] { scroll-margin-top: 80px; }
+
   #root { @apply w-full min-h-screen flex flex-col; }
 }
 

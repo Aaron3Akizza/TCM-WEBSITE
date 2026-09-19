@@ -9,7 +9,7 @@ export const NotFound: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow pt-[72px] bg-tym-bg flex items-center justify-center px-4">
+      <main className="flex-grow pt-[68px] bg-tym-bg flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           {/* Giant 404 */}
           <div className="relative mb-8 select-none">

@@ -54,7 +54,7 @@ export const EventDetails: React.FC = () => {
   if (loading) return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow pt-[72px]"><LoadingSpinner /></main>
+      <main className="flex-grow pt-[68px]"><LoadingSpinner /></main>
       <Footer />
     </div>
   );
@@ -62,7 +62,7 @@ export const EventDetails: React.FC = () => {
   if (!event) return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow pt-[72px] flex items-center justify-center">
+      <main className="flex-grow pt-[68px] flex items-center justify-center">
         <div className="text-center px-4">
           <h2 className="text-3xl font-black text-tym-slate mb-3">Event not found</h2>
           <p className="text-gray-500 mb-6">This event may have been removed or the link is incorrect.</p>
@@ -78,7 +78,7 @@ export const EventDetails: React.FC = () => {
       <Navbar />
 
       {/* Hero */}
-      <header className="relative pt-[72px]">
+      <header className="relative pt-[68px]">
         <div className="relative h-64 md:h-80 bg-tym-slate overflow-hidden">
           <div className="absolute inset-0 opacity-5 pointer-events-none"
             style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
