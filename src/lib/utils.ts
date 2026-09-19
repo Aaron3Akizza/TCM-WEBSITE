@@ -3,12 +3,37 @@ export function cn(...classes: (string | undefined | null | boolean)[]): string 
 }
 
 export function formatDate(date: string | Date): string {
-  const d = new Date(date);
+  // Parse YYYY-MM-DD strings as local time to avoid UTC-offset day-shift bug.
+  // e.g. new Date("2026-09-18") = UTC midnight which shifts to prev day in UTC- zones.
+  let d: Date;
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [year, month, day] = date.split('-').map(Number);
+    d = new Date(year, month - 1, day); // local midnight
+  } else {
+    d = new Date(date);
+  }
   return d.toLocaleDateString('en-US', {
     weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    year:    'numeric',
+    month:   'long',
+    day:     'numeric',
+  });
+}
+
+/** Lightweight version used in cards — returns "Mon 18 Sep 2026" */
+export function formatDateShort(date: string | Date): string {
+  let d: Date;
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [year, month, day] = date.split('-').map(Number);
+    d = new Date(year, month - 1, day);
+  } else {
+    d = new Date(date);
+  }
+  return d.toLocaleDateString('en-US', {
+    weekday: 'short',
+    day:     'numeric',
+    month:   'short',
+    year:    'numeric',
   });
 }
 

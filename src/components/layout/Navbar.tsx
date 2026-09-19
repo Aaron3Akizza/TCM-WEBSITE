@@ -19,7 +19,8 @@ export const Navbar: React.FC = () => {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  /* Close menu on route change */
+  /* Close mobile menu whenever the route changes.
+   * eslint-disable-next-line react/set-state-in-effect — intentional side effect */
   useEffect(() => { setIsOpen(false); }, [location.pathname]);
 
   const isActive = (path: string) =>

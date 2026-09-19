@@ -125,7 +125,7 @@ export const Contact: React.FC = () => {
                       onChange={update('message')}
                       required
                       disabled={loading}
-                      className="input-base resize-none"
+                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-tym-slate placeholder-gray-400 text-sm font-dm-sans transition-colors duration-200 focus:outline-none focus:border-tym-crimson disabled:opacity-50 disabled:cursor-not-allowed resize-none"
                     />
                   </div>
                   {error && (

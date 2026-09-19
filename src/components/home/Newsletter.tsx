@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/Button';
-import { Input } from '../ui/Input';
 import { Mail, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { isValidEmail } from '../../lib/utils';
@@ -68,14 +67,14 @@ export const Newsletter: React.FC = () => {
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
-              <Input
+              <input
                 type="email"
                 placeholder="Enter your email address"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setStatus('idle'); }}
                 disabled={status === 'loading'}
-                className="bg-white/10 border-white/20 text-white placeholder-white/40 focus:border-tym-crimson"
                 aria-label="Email address"
+                className="w-full px-4 py-3 rounded-xl border-2 border-white/20 bg-white/10 text-white placeholder-white/40 text-sm transition-colors duration-200 focus:outline-none focus:border-tym-crimson disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
             <Button

@@ -35,7 +35,7 @@ export const Profile: React.FC = () => {
     { icon: Mail,     label: 'Email',       value: user.email ?? '—' },
     { icon: Phone,    label: 'Phone',       value: profile?.phone ?? 'Not provided' },
     { icon: Shield,   label: 'Role',        value: profile?.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : 'Member' },
-    { icon: Calendar, label: 'Member Since',value: user.created_at ? new Date(user.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—' },
+    { icon: Calendar, label: 'Member Since', value: profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—' },
   ];
 
   return (

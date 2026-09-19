@@ -5,6 +5,12 @@ import { Footer } from '../components/layout/Footer';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { useEvents } from '../hooks/useEvents';
 import { formatTime } from '../lib/utils';
+
+/** Parse a YYYY-MM-DD string as local midnight to avoid UTC day-shift. */
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
 import { Calendar, Clock, MapPin, ArrowRight } from 'lucide-react';
 
 export const Events: React.FC = () => {
@@ -53,13 +59,13 @@ export const Events: React.FC = () => {
                       {/* Date sidebar */}
                       <div className="md:w-28 bg-tym-slate flex-shrink-0 flex flex-col items-center justify-center py-6 md:py-8 px-4">
                         <span className="text-tym-crimson text-xs font-black uppercase tracking-widest mb-1">
-                          {new Date(event.event_date).toLocaleString('default', { month: 'short' })}
+                          {parseLocalDate(event.event_date).toLocaleString('default', { month: 'short' })}
                         </span>
                         <span className="text-white text-4xl font-black leading-none">
-                          {new Date(event.event_date).getDate()}
+                          {parseLocalDate(event.event_date).getDate()}
                         </span>
                         <span className="text-white/40 text-xs mt-1">
-                          {new Date(event.event_date).getFullYear()}
+                          {parseLocalDate(event.event_date).getFullYear()}
                         </span>
                       </div>
 

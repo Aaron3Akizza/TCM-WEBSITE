@@ -6,8 +6,7 @@ import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { useAuth } from '../hooks/useAuth';
 import { getEventBySlug, registerForEvent, isUserRegisteredForEvent } from '../hooks/useEvents';
-import { formatDate, formatTime } from '../lib/utils';
-import { Calendar, Clock, MapPin, CheckCircle2, ArrowLeft, Users } from 'lucide-react';
+import { formatDate, formatTime } from '../lib/utils';import { Calendar, Clock, MapPin, CheckCircle2, ArrowLeft, Users } from 'lucide-react';
 import type { Event } from '../types';
 
 export const EventDetails: React.FC = () => {

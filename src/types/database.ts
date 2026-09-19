@@ -13,15 +13,15 @@ export interface Event {
   id: string;
   title: string;
   slug: string;
-  description: string;
-  short_description: string;
+  description?: string | null;
+  short_description?: string | null;
   event_date: string;
-  start_time: string;
-  end_time: string;
-  location: string;
-  image_url?: string;
+  start_time?: string | null;
+  end_time?: string | null;
+  location?: string | null;
+  image_url?: string | null;
   registration_required: boolean;
-  registration_deadline?: string;
+  registration_deadline?: string | null;
   created_at: string;
   updated_at: string;
 }
