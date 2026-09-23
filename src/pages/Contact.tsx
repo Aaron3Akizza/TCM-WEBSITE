@@ -1,10 +1,29 @@
 import React, { useState } from 'react';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Mail, MapPin, Phone, Send, CheckCircle2 } from 'lucide-react';
+import { Phone, MapPin, Send, CheckCircle2, Loader2, PlayCircle, MessageCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+
+const contactInfo = [
+  {
+    icon: Phone,
+    label: 'Phone / WhatsApp',
+    lines: [
+      { text: '+256 779 340 046', href: 'tel:+256779340046' },
+      { text: '+256 704 812 493', href: 'tel:+256704812493' },
+    ],
+  },
+  {
+    icon: PlayCircle,
+    label: 'YouTube',
+    lines: [{ text: '@transformclub-o4f', href: 'https://youtube.com/@transformclub-o4f?si=l1oPb9_XGyjJBrhC' }],
+  },
+  {
+    icon: MapPin,
+    label: 'Location',
+    lines: [{ text: 'Uganda', href: undefined }],
+  },
+];
 
 export const Contact: React.FC = () => {
   const [form,    setForm]    = useState({ name: '', email: '', phone: '', subject: '', message: '' });
@@ -12,23 +31,19 @@ export const Contact: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [error,   setError]   = useState('');
 
-  const update = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((f) => ({ ...f, [field]: e.target.value }));
+  const update = (f: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm(v => ({ ...v, [f]: e.target.value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    setError(''); setLoading(true);
     try {
       const { error: err } = await supabase.from('contact_messages').insert([form]);
       if (err) throw err;
       setSuccess(true);
       setForm({ name: '', email: '', phone: '', subject: '', message: '' });
-    } catch {
-      setError('Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError('Something went wrong. Please try again.'); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -36,109 +51,122 @@ export const Contact: React.FC = () => {
       <Navbar />
 
       {/* Banner */}
-      <header className="relative pt-[68px]">
-        <div className="relative h-56 md:h-72 bg-tym-slate overflow-hidden">
-          <div className="absolute inset-0 opacity-5 pointer-events-none"
-            style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
-          <div className="relative z-10 h-full flex items-center max-w-7xl mx-auto px-4 md:px-8">
+      <header className="page-banner">
+        <div className="page-banner-inner h-56 md:h-72">
+          <div className="page-banner-content">
             <div>
-              <span className="label-tag [&::before]:bg-white text-white mb-3 block">Reach Out</span>
+              <span className="label-tag-light mb-3 block">Reach Out</span>
               <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight">Contact Us</h1>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="flex-grow bg-tym-bg">
-        <div className="max-w-6xl mx-auto px-4 md:px-8 py-16">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+      <main className="flex-grow bg-tcm-gray-soft">
+        <div className="container-tcm py-14">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
-            {/* ── Contact info ── */}
-            <aside className="flex flex-col gap-6">
+            {/* Info */}
+            <aside className="flex flex-col gap-5">
               <div>
-                <h2 className="text-2xl font-black text-tym-slate mb-2">Get in Touch</h2>
-                <p className="text-gray-500 text-sm leading-relaxed">
-                  We'd love to hear from you. Reach out with questions,
-                  partnership inquiries, or to learn more about TCM.
+                <h2 className="text-2xl font-black text-tcm-navy mb-2">Get in Touch</h2>
+                <p className="text-tcm-gray-mid text-sm leading-relaxed">
+                  We'd love to hear from you. Reach out with questions, partnership inquiries, or to find out more about TCM.
                 </p>
               </div>
 
-              {[
-                { icon: Mail,    label: 'Email',    value: 'info@tcm.org',       href: 'mailto:info@tcm.org' },
-                { icon: Phone,   label: 'Phone',    value: '+256 700 000 000',   href: 'tel:+256700000000' },
-                { icon: MapPin,  label: 'Location', value: 'Uganda',             href: undefined },
-              ].map(({ icon: Icon, label, value, href }) => (
-                <div key={label} className="flex items-start gap-4 bg-white rounded-2xl p-5 border border-gray-100">
-                  <div className="w-10 h-10 rounded-xl bg-tym-crimson/10 flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-5 h-5 text-tym-crimson" />
+              {contactInfo.map(({ icon: Icon, label, lines }) => (
+                <div key={label} className="card p-5 flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-tcm-gold/10 border border-tcm-gold/30 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-5 h-5 text-tcm-gold" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-0.5">{label}</p>
-                    {href ? (
-                      <a href={href} className="font-semibold text-tym-slate hover:text-tym-crimson transition-colors text-sm">{value}</a>
-                    ) : (
-                      <p className="font-semibold text-tym-slate text-sm">{value}</p>
-                    )}
+                    <p className="text-[10px] font-black text-tcm-gray-mid uppercase tracking-[0.15em] mb-1">{label}</p>
+                    {lines.map(({ text, href }) => (
+                      href
+                        ? <a key={text} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer"
+                            className="block text-sm font-semibold text-tcm-navy hover:text-tcm-orange transition-colors">
+                            {text}
+                          </a>
+                        : <p key={text} className="text-sm font-semibold text-tcm-navy">{text}</p>
+                    ))}
                   </div>
                 </div>
               ))}
+
+              {/* WhatsApp quick link */}
+              <a
+                href="https://wa.me/256779340046"
+                target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-full bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-colors shadow-md"
+              >
+                <MessageCircle className="w-4 h-4" />
+                WhatsApp Us
+              </a>
             </aside>
 
-            {/* ── Form ── */}
-            <div className="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm p-8 md:p-10">
-              {success ? (
-                <div className="flex flex-col items-center justify-center h-full text-center py-12 gap-4">
-                  <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                    <CheckCircle2 className="w-8 h-8 text-green-500" />
-                  </div>
-                  <h3 className="text-2xl font-black text-tym-slate">Message Sent!</h3>
-                  <p className="text-gray-500 max-w-sm">
-                    Thanks for reaching out. We'll get back to you as soon as possible.
-                  </p>
-                  <Button variant="ghost" size="md" onClick={() => setSuccess(false)}>
-                    Send Another
-                  </Button>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <h2 className="text-xl font-black text-tym-slate mb-6">Send Us a Message</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <Input label="Full Name" placeholder="Your name" value={form.name}
-                      onChange={update('name')} required disabled={loading} />
-                    <Input label="Email" type="email" placeholder="your@email.com" value={form.email}
-                      onChange={update('email')} required disabled={loading} />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <Input label="Phone" placeholder="+256 700 000 000" value={form.phone}
-                      onChange={update('phone')} disabled={loading} />
-                    <Input label="Subject" placeholder="What's this about?" value={form.subject}
-                      onChange={update('subject')} required disabled={loading} />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-semibold text-tym-slate">
-                      Message <span className="text-tym-crimson">*</span>
-                    </label>
-                    <textarea
-                      rows={5}
-                      placeholder="Tell us how we can help..."
-                      value={form.message}
-                      onChange={update('message')}
-                      required
-                      disabled={loading}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-tym-slate placeholder-gray-400 text-sm font-dm-sans transition-colors duration-200 focus:outline-none focus:border-tym-crimson disabled:opacity-50 disabled:cursor-not-allowed resize-none"
-                    />
-                  </div>
-                  {error && (
-                    <p className="text-red-500 text-sm font-medium bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                      ⚠ {error}
+            {/* Form */}
+            <div className="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="h-1.5 bg-gradient-to-r from-tcm-navy via-tcm-gold to-tcm-orange" />
+              <div className="p-8 md:p-10">
+                {success ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
+                    <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                      <CheckCircle2 className="w-8 h-8 text-green-500" />
+                    </div>
+                    <h3 className="text-2xl font-black text-tcm-navy">Message Sent!</h3>
+                    <p className="text-tcm-gray-mid max-w-xs">
+                      Thanks for reaching out. We'll get back to you as soon as possible.
                     </p>
-                  )}
-                  <Button type="submit" variant="primary" size="lg" isLoading={loading}
-                    iconRight={<Send className="w-4 h-4" />} className="w-full md:w-auto">
-                    Send Message
-                  </Button>
-                </form>
-              )}
+                    <button onClick={() => setSuccess(false)}
+                      className="btn-outline-navy px-6 py-2.5 text-sm mt-2">
+                      Send Another
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+                    <h2 className="text-xl font-black text-tcm-navy mb-6">Send Us a Message</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-semibold text-tcm-navy">Full Name <span className="text-tcm-orange">*</span></label>
+                        <input value={form.name} onChange={update('name')} placeholder="Your name" required disabled={loading} className="input-field" />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-semibold text-tcm-navy">Email <span className="text-tcm-orange">*</span></label>
+                        <input type="email" value={form.email} onChange={update('email')} placeholder="your@email.com" required disabled={loading} className="input-field" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-semibold text-tcm-navy">Phone <span className="text-tcm-gray-mid text-xs font-normal">(optional)</span></label>
+                        <input type="tel" value={form.phone} onChange={update('phone')} placeholder="+256 700 000 000" disabled={loading} className="input-field" />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-semibold text-tcm-navy">Subject <span className="text-tcm-orange">*</span></label>
+                        <input value={form.subject} onChange={update('subject')} placeholder="What's this about?" required disabled={loading} className="input-field" />
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm font-semibold text-tcm-navy">Message <span className="text-tcm-orange">*</span></label>
+                      <textarea rows={5} value={form.message} onChange={update('message')} placeholder="Tell us how we can help…"
+                        required disabled={loading}
+                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-tcm-navy placeholder-tcm-gray-mid text-sm resize-none focus:outline-none focus:border-tcm-gold transition-colors disabled:opacity-50" />
+                    </div>
+                    {error && (
+                      <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                        <p className="text-red-600 text-sm font-medium">⚠ {error}</p>
+                      </div>
+                    )}
+                    <button type="submit" disabled={loading}
+                      className="btn-primary w-full md:w-auto px-8 py-3.5 justify-center">
+                      {loading
+                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>
+                        : <><Send className="w-4 h-4" /> Send Message</>
+                      }
+                    </button>
+                  </form>
+                )}
+              </div>
             </div>
 
           </div>

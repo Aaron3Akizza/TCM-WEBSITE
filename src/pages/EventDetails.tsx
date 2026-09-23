@@ -64,7 +64,7 @@ export const EventDetails: React.FC = () => {
       <Navbar />
       <main className="flex-grow pt-[68px] flex items-center justify-center">
         <div className="text-center px-4">
-          <h2 className="text-3xl font-black text-tym-slate mb-3">Event not found</h2>
+          <h2 className="text-3xl font-black text-tcm-navy mb-3">Event not found</h2>
           <p className="text-gray-500 mb-6">This event may have been removed or the link is incorrect.</p>
           <Link to="/events"><Button variant="primary">View All Events</Button></Link>
         </div>
@@ -79,7 +79,7 @@ export const EventDetails: React.FC = () => {
 
       {/* Hero */}
       <header className="relative pt-[68px]">
-        <div className="relative h-64 md:h-80 bg-tym-slate overflow-hidden">
+        <div className="relative h-64 md:h-80 bg-tcm-navy overflow-hidden">
           <div className="absolute inset-0 opacity-5 pointer-events-none"
             style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
           <div className="relative z-10 h-full flex items-end max-w-7xl mx-auto px-4 md:px-8 pb-8">
@@ -101,20 +101,20 @@ export const EventDetails: React.FC = () => {
             <article className="lg:col-span-2">
               {/* Meta chips */}
               <div className="flex flex-wrap gap-3 mb-8">
-                <span className="inline-flex items-center gap-2 bg-white border border-gray-100 rounded-full px-4 py-2 text-sm font-semibold text-tym-slate shadow-sm">
-                  <Calendar className="w-4 h-4 text-tym-crimson" />
+                <span className="inline-flex items-center gap-2 bg-white border border-gray-100 rounded-full px-4 py-2 text-sm font-semibold text-tcm-navy shadow-sm">
+                  <Calendar className="w-4 h-4 text-tcm-orange" />
                   {formatDate(event.event_date)}
                 </span>
                 {event.start_time && (
-                  <span className="inline-flex items-center gap-2 bg-white border border-gray-100 rounded-full px-4 py-2 text-sm font-semibold text-tym-slate shadow-sm">
-                    <Clock className="w-4 h-4 text-tym-crimson" />
+                  <span className="inline-flex items-center gap-2 bg-white border border-gray-100 rounded-full px-4 py-2 text-sm font-semibold text-tcm-navy shadow-sm">
+                    <Clock className="w-4 h-4 text-tcm-orange" />
                     {formatTime(event.start_time)}
                     {event.end_time && ` – ${formatTime(event.end_time)}`}
                   </span>
                 )}
                 {event.location && (
-                  <span className="inline-flex items-center gap-2 bg-white border border-gray-100 rounded-full px-4 py-2 text-sm font-semibold text-tym-slate shadow-sm">
-                    <MapPin className="w-4 h-4 text-tym-crimson" />
+                  <span className="inline-flex items-center gap-2 bg-white border border-gray-100 rounded-full px-4 py-2 text-sm font-semibold text-tcm-navy shadow-sm">
+                    <MapPin className="w-4 h-4 text-tcm-orange" />
                     {event.location}
                   </span>
                 )}
@@ -122,7 +122,7 @@ export const EventDetails: React.FC = () => {
 
               {event.description && (
                 <div className="bg-white rounded-2xl p-8 border border-gray-100">
-                  <h2 className="text-xl font-bold text-tym-slate mb-4">About this Event</h2>
+                  <h2 className="text-xl font-bold text-tcm-navy mb-4">About this Event</h2>
                   <p className="text-gray-500 leading-relaxed whitespace-pre-wrap">{event.description}</p>
                 </div>
               )}
@@ -133,10 +133,10 @@ export const EventDetails: React.FC = () => {
               <div className="sticky top-24 bg-white rounded-2xl border border-gray-100 shadow-sm p-7">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 rounded-xl bg-tym-crimson/10 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-tym-crimson" />
+                    <Users className="w-5 h-5 text-tcm-orange" />
                   </div>
                   <div>
-                    <p className="font-bold text-tym-slate text-sm">Registration</p>
+                    <p className="font-bold text-tcm-navy text-sm">Registration</p>
                     <p className="text-gray-400 text-xs">
                       {event.registration_required ? 'Required for this event' : 'Open to all'}
                     </p>

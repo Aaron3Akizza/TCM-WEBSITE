@@ -22,7 +22,7 @@ export const Events: React.FC = () => {
 
       {/* Banner */}
       <header className="relative pt-[68px]">
-        <div className="relative h-64 md:h-72 bg-tym-slate overflow-hidden">
+        <div className="relative h-64 md:h-72 bg-tcm-navy overflow-hidden">
           <div className="absolute inset-0 opacity-5 pointer-events-none"
             style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
           <div className="relative z-10 h-full flex items-center max-w-7xl mx-auto px-4 md:px-8">
@@ -43,7 +43,7 @@ export const Events: React.FC = () => {
               <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
                 <Calendar className="w-7 h-7 text-gray-300" />
               </div>
-              <h3 className="text-xl font-bold text-tym-slate mb-2">No upcoming events</h3>
+              <h3 className="text-xl font-bold text-tcm-navy mb-2">No upcoming events</h3>
               <p className="text-gray-400 text-sm">Check back soon — something is always brewing.</p>
             </div>
           ) : (
@@ -54,11 +54,11 @@ export const Events: React.FC = () => {
                   to={`/events/${event.slug}`}
                   className="group block"
                 >
-                  <article className="bg-white rounded-2xl border border-gray-100 hover:border-tym-crimson/30 hover:shadow-xl transition-all duration-300 overflow-hidden">
+                  <article className="bg-white rounded-2xl border border-gray-100 hover:border-tcm-orange/30 hover:shadow-xl transition-all duration-300 overflow-hidden">
                     <div className="flex flex-col md:flex-row">
                       {/* Date sidebar */}
-                      <div className="md:w-28 bg-tym-slate flex-shrink-0 flex flex-col items-center justify-center py-6 md:py-8 px-4">
-                        <span className="text-tym-crimson text-xs font-black uppercase tracking-widest mb-1">
+                      <div className="md:w-28 bg-tcm-navy flex-shrink-0 flex flex-col items-center justify-center py-6 md:py-8 px-4">
+                        <span className="text-tcm-orange text-xs font-black uppercase tracking-widest mb-1">
                           {parseLocalDate(event.event_date).toLocaleString('default', { month: 'short' })}
                         </span>
                         <span className="text-white text-4xl font-black leading-none">
@@ -72,7 +72,7 @@ export const Events: React.FC = () => {
                       {/* Content */}
                       <div className="flex-1 p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-4">
                         <div className="flex-1">
-                          <h3 className="text-xl font-bold text-tym-slate mb-2 group-hover:text-tym-crimson transition-colors duration-200">
+                          <h3 className="text-xl font-bold text-tcm-navy mb-2 group-hover:text-tcm-orange transition-colors duration-200">
                             {event.title}
                           </h3>
                           {event.short_description && (
@@ -96,7 +96,7 @@ export const Events: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex-shrink-0">
-                          <span className="inline-flex items-center gap-2 text-sm font-bold text-tym-crimson group-hover:gap-3 transition-all duration-200">
+                          <span className="inline-flex items-center gap-2 text-sm font-bold text-tcm-orange group-hover:gap-3 transition-all duration-200">
                             View Details <ArrowRight className="w-4 h-4" />
                           </span>
                         </div>

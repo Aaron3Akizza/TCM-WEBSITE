@@ -4,14 +4,30 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Base ─────────────────────────────────────────────── */
+/* ─── CSS Design Tokens ─────────────────────────────────────── */
+:root {
+  --tcm-navy:       #0F1F3D;
+  --tcm-navy-mid:   #1A3561;
+  --tcm-navy-lt:    #2A4A7F;
+  --tcm-gold:       #C9A84C;
+  --tcm-gold-lt:    #E8C96A;
+  --tcm-orange:     #E86A2A;
+  --tcm-orange-lt:  #F08040;
+  --tcm-sky:        #A8C8E8;
+  --tcm-sky-lt:     #D4E8F5;
+  --tcm-cream:      #FAFAF7;
+  --tcm-gray-soft:  #F2F4F7;
+  --tcm-gray-mid:   #8A9AB5;
+  --tcm-gray-dark:  #3D4F6B;
+}
+
+/* ─── Base ──────────────────────────────────────────────────── */
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
-
   html { scroll-behavior: smooth; }
 
   body {
-    @apply bg-tym-bg text-tym-slate font-dm-sans antialiased;
+    @apply bg-tcm-cream text-tcm-navy font-dm-sans antialiased;
     font-feature-settings: 'kern' 1, 'liga' 1;
   }
 
@@ -19,185 +35,205 @@
     @apply font-dm-sans font-bold leading-tight tracking-tight;
   }
 
-  /* Ensure anchored sections are never hidden under the fixed navbar */
+  /* Anchor links clear the fixed navbar */
   [id] { scroll-margin-top: 80px; }
 
   #root { @apply w-full min-h-screen flex flex-col; }
+
+  /* Focus ring */
+  :focus-visible {
+    outline: 2px solid var(--tcm-gold);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
 }
 
-/* ─── Components ────────────────────────────────────────── */
+/* ─── Components ────────────────────────────────────────────── */
 @layer components {
 
   /* Layout */
-  .container-tym {
-    @apply max-w-7xl mx-auto px-4 md:px-8;
+  .container-tcm  { @apply max-w-7xl mx-auto px-4 md:px-8; }
+  .section-pad    { @apply py-20 md:py-28; }
+
+  /* Page banner (dark navy header used on inner pages) */
+  .page-banner {
+    @apply relative pt-[68px] overflow-hidden;
   }
-  .section-padding {
-    @apply py-20 md:py-28;
+  .page-banner-inner {
+    @apply relative h-56 md:h-72 bg-tcm-navy overflow-hidden;
+    background-image: url('/assets/logo/tcm-logo.jpg');
+    background-size: cover;
+    background-position: center top;
+  }
+  .page-banner-inner::after {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(to right, rgba(15,31,61,0.95) 0%, rgba(15,31,61,0.75) 60%, rgba(15,31,61,0.4) 100%);
+  }
+  .page-banner-content {
+    @apply relative z-10 h-full flex items-end max-w-7xl mx-auto px-4 md:px-8 pb-8;
   }
 
-  /* Typography */
+  /* Typography accents */
   .label-tag {
-    @apply inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-tym-crimson;
+    @apply inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-tcm-gold;
   }
   .label-tag::before {
     content: '';
-    @apply block w-6 h-px bg-tym-crimson;
+    @apply block w-6 h-px bg-tcm-gold flex-shrink-0;
+  }
+  .label-tag-light {
+    @apply inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-tcm-gold-lt;
+  }
+  .label-tag-light::before {
+    content: '';
+    @apply block w-6 h-px bg-tcm-gold-lt flex-shrink-0;
   }
 
-  .display-heading {
-    @apply font-black text-5xl md:text-7xl leading-none tracking-tighter;
-  }
+  .divider-gold { @apply w-12 h-[3px] bg-tcm-gold rounded-full; }
+  .divider-orange { @apply w-12 h-[3px] bg-tcm-orange rounded-full; }
 
-  .serif-accent {
+  .serif-quote {
     font-family: 'Cormorant Garamond', serif;
     @apply italic font-semibold;
   }
 
-  /* Crimson underline accent */
-  .underline-crimson {
-    @apply relative inline-block;
-  }
-  .underline-crimson::after {
-    content: '';
-    @apply absolute bottom-0 left-0 w-full h-1 bg-tym-crimson rounded-full;
-  }
-
   /* Cards */
-  .card-base {
+  .card {
     @apply bg-white rounded-2xl border border-gray-100 shadow-sm
-           transition-all duration-300
-           hover:shadow-xl hover:-translate-y-1;
+           transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
   }
-
-  .card-dark {
-    @apply bg-tym-slate/80 backdrop-blur rounded-2xl border border-white/10
-           transition-all duration-300
-           hover:bg-tym-slate hover:shadow-xl hover:-translate-y-1;
+  .card-navy {
+    @apply bg-tcm-navy-mid rounded-2xl border border-white/10
+           transition-all duration-300 hover:border-tcm-gold/40 hover:shadow-navy hover:-translate-y-1;
+  }
+  .card-gold-border {
+    @apply bg-white rounded-2xl border-2 border-tcm-gold/30
+           transition-all duration-300 hover:border-tcm-gold hover:shadow-gold hover:-translate-y-1;
   }
 
   /* Buttons */
-  .btn {
-    @apply inline-flex items-center justify-center gap-2
-           font-bold tracking-wide rounded-full
-           transition-all duration-200
-           focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
-  }
   .btn-primary {
-    @apply btn bg-tym-crimson text-white
-           hover:bg-red-700 active:scale-95
-           focus-visible:ring-tym-crimson;
+    @apply inline-flex items-center justify-center gap-2 font-bold tracking-wide rounded-full
+           bg-tcm-orange text-white px-6 py-3 text-sm
+           hover:bg-tcm-orange-lt active:scale-[0.98]
+           transition-all duration-200
+           focus-visible:ring-2 focus-visible:ring-tcm-orange focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed shadow-orange;
   }
-  .btn-outline-light {
-    @apply btn border-2 border-white text-white
-           hover:bg-white hover:text-tym-slate active:scale-95;
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 font-bold tracking-wide rounded-full
+           bg-tcm-gold text-tcm-navy px-6 py-3 text-sm
+           hover:bg-tcm-gold-lt active:scale-[0.98]
+           transition-all duration-200
+           focus-visible:ring-2 focus-visible:ring-tcm-gold focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed shadow-gold;
   }
-  .btn-outline-dark {
-    @apply btn border-2 border-tym-slate text-tym-slate
-           hover:bg-tym-slate hover:text-white active:scale-95;
+  .btn-outline-navy {
+    @apply inline-flex items-center justify-center gap-2 font-bold tracking-wide rounded-full
+           border-2 border-tcm-navy text-tcm-navy px-6 py-3 text-sm
+           hover:bg-tcm-navy hover:text-white active:scale-[0.98]
+           transition-all duration-200
+           focus-visible:ring-2 focus-visible:ring-tcm-navy focus-visible:ring-offset-2;
   }
-  .btn-ghost {
-    @apply btn text-tym-crimson hover:bg-red-50 active:scale-95;
+  .btn-outline-gold {
+    @apply inline-flex items-center justify-center gap-2 font-bold tracking-wide rounded-full
+           border-2 border-tcm-gold text-tcm-gold px-6 py-3 text-sm
+           hover:bg-tcm-gold hover:text-tcm-navy active:scale-[0.98]
+           transition-all duration-200
+           focus-visible:ring-2 focus-visible:ring-tcm-gold focus-visible:ring-offset-2;
+  }
+  .btn-outline-white {
+    @apply inline-flex items-center justify-center gap-2 font-bold tracking-wide rounded-full
+           border-2 border-white text-white px-6 py-3 text-sm
+           hover:bg-white hover:text-tcm-navy active:scale-[0.98]
+           transition-all duration-200;
   }
 
-  /* Input */
-  .input-base {
-    @apply w-full px-4 py-3 rounded-xl border-2 border-gray-200
-           bg-white text-tym-slate placeholder-gray-400
-           font-dm-sans text-sm
+  /* Inputs */
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white
+           text-tcm-navy placeholder-tcm-gray-mid text-sm font-dm-sans
            transition-colors duration-200
-           focus:outline-none focus:border-tym-crimson
+           focus:outline-none focus:border-tcm-gold
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .input-field-error { @apply border-red-400 focus:border-red-500; }
+
+  .select-field {
+    @apply w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white
+           text-tcm-navy text-sm font-dm-sans
+           transition-colors duration-200 cursor-pointer
+           focus:outline-none focus:border-tcm-gold
            disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
-  /* Section divider */
-  .divider-crimson {
-    @apply w-12 h-1 bg-tym-crimson rounded-full;
-  }
-
-  /* Gradient overlays */
-  .overlay-dark {
-    @apply absolute inset-0 bg-gradient-to-t from-tym-slate/80 via-tym-slate/30 to-transparent;
-  }
-  .overlay-bottom {
-    @apply absolute inset-0 bg-gradient-to-t from-tym-slate/70 to-transparent;
-  }
-
-  /* Nav link */
+  /* Nav */
   .nav-link {
-    @apply relative text-sm font-semibold text-tym-slate
-           transition-colors duration-200 hover:text-tym-crimson
-           after:absolute after:bottom-[-4px] after:left-0
-           after:w-0 after:h-0.5 after:bg-tym-crimson after:rounded-full
-           after:transition-all after:duration-300
-           hover:after:w-full;
+    @apply px-3.5 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 whitespace-nowrap;
   }
   .nav-link-active {
-    @apply text-tym-crimson after:w-full;
+    @apply bg-tcm-gold/15 text-tcm-gold;
+  }
+  .nav-link-idle {
+    @apply text-white/85 hover:bg-white/10 hover:text-white;
+  }
+
+  /* Gold underline accent */
+  .gold-underline {
+    @apply relative inline-block;
+  }
+  .gold-underline::after {
+    content: '';
+    @apply absolute -bottom-1 left-0 w-full h-[3px] bg-tcm-gold rounded-full;
+  }
+
+  /* Section heading block */
+  .section-heading { @apply mb-12 md:mb-16; }
+
+  /* Glass panel */
+  .glass-navy {
+    backdrop-filter: blur(16px) saturate(180%);
+    background-color: rgba(15,31,61,0.88);
   }
 }
 
-/* ─── Utilities ─────────────────────────────────────────── */
+/* ─── Utilities ──────────────────────────────────────────────── */
 @layer utilities {
-
-  /* Animated gradient text */
-  .text-gradient {
+  .text-gold-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, #DC2626 0%, #991B1B 100%);
+    background-image: linear-gradient(135deg, #C9A84C 0%, #E8C96A 60%, #C9A84C 100%);
+  }
+  .text-fire-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #E86A2A 0%, #C9A84C 100%);
+  }
+  .bg-navy-gradient {
+    background-image: linear-gradient(160deg, #0F1F3D 0%, #1A3561 100%);
+  }
+  .bg-gold-gradient {
+    background-image: linear-gradient(135deg, #C9A84C 0%, #E8C96A 100%);
+  }
+  .bg-fire-gradient {
+    background-image: linear-gradient(135deg, #E86A2A 0%, #C9A84C 100%);
   }
 
-  /* Glass morphism */
-  .glass {
-    backdrop-filter: blur(16px) saturate(180%);
-    background-color: rgba(248, 249, 250, 0.85);
-  }
-  .glass-dark {
-    backdrop-filter: blur(16px) saturate(180%);
-    background-color: rgba(30, 41, 59, 0.9);
-  }
-
-  /* Noise texture overlay */
-  .bg-noise {
-    position: relative;
-  }
-  .bg-noise::before {
+  /* Dot grid texture used on dark sections */
+  .dot-grid::before {
     content: '';
     position: absolute;
     inset: 0;
-    opacity: 0.03;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.06;
+    background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0);
+    background-size: 32px 32px;
     pointer-events: none;
   }
 
-  /* Smooth fade-up animation */
-  .animate-fade-up {
-    animation: fadeUp 0.6s ease forwards;
-  }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .animate-fade-in {
-    animation: fadeIn 0.5s ease forwards;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
-
-  /* Stagger children */
+  /* Stagger animation delays */
   .stagger > *:nth-child(1) { animation-delay: 0ms; }
-  .stagger > *:nth-child(2) { animation-delay: 100ms; }
-  .stagger > *:nth-child(3) { animation-delay: 200ms; }
-  .stagger > *:nth-child(4) { animation-delay: 300ms; }
-
-  /* Red glow */
-  .glow-crimson {
-    box-shadow: 0 0 40px rgba(220, 38, 38, 0.25);
-  }
-
-  /* Aspect ratios */
-  .aspect-portrait { aspect-ratio: 3/4; }
-  .aspect-cinema   { aspect-ratio: 21/9; }
+  .stagger > *:nth-child(2) { animation-delay: 80ms; }
+  .stagger > *:nth-child(3) { animation-delay: 160ms; }
+  .stagger > *:nth-child(4) { animation-delay: 240ms; }
+  .stagger > *:nth-child(5) { animation-delay: 320ms; }
+  .stagger > *:nth-child(6) { animation-delay: 400ms; }
 }

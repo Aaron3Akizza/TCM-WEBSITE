@@ -1,35 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, UserCircle2, LogOut, Users } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { Button } from '../ui/Button';
 import { MobileMenu } from './MobileMenu';
 import { navigationLinks } from '../../data/navigation';
-
-/* ── TCM Hologram Logo Mark ─────────────────────────────── */
-const TCMLogo: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <svg
-    viewBox="0 0 48 46"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-    aria-label="Transform Christian Ministry"
-    role="img"
-  >
-    <path
-      fill="#DC2626"
-      d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z"
-    />
-    {/* Highlight gleam */}
-    <path
-      d="M20 2 L14 12 L22 12 L16 22"
-      stroke="rgba(255,255,255,0.35)"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      fill="none"
-    />
-  </svg>
-);
 
 export const Navbar: React.FC = () => {
   const [isOpen,   setIsOpen]   = useState(false);
@@ -43,7 +17,7 @@ export const Navbar: React.FC = () => {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  /* Close mobile menu on route change — intentional side effect */
+  /* Close mobile menu on route change — intentional side-effect */
   useEffect(() => { setIsOpen(false); }, [location.pathname]);
 
   const isActive = (path: string) =>
@@ -52,40 +26,50 @@ export const Navbar: React.FC = () => {
   return (
     <>
       <nav
+        role="navigation"
+        aria-label="Main navigation"
         className={[
           'fixed w-full top-0 z-50 transition-all duration-300',
           scrolled
-            ? 'glass border-b border-gray-200/60 shadow-md'
-            : 'bg-tym-bg/95 border-b border-gray-100',
+            ? 'bg-navy-gradient shadow-navy border-b border-white/10'
+            : 'bg-navy-gradient border-b border-white/10',
         ].join(' ')}
       >
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between h-[68px]">
 
-            {/* ── Logo: symbol only ── */}
+            {/* ── Logo ── */}
             <Link
               to="/"
-              className="flex items-center gap-2.5 group flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-tym-crimson rounded-lg"
-              aria-label="Transform Christian Ministry — Home"
+              className="flex items-center gap-3 group flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tcm-gold rounded-lg"
+              aria-label="Transform Christian Ministries — Home"
             >
-              <TCMLogo className="w-8 h-8 group-hover:opacity-80 transition-opacity duration-200" />
-              {/* Wordmark: "TCM" only — no expanded name */}
-              <span className="font-black text-[17px] tracking-[0.12em] text-tym-slate group-hover:text-tym-crimson transition-colors duration-200 select-none">
-                TCM
-              </span>
+              <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 ring-1 ring-tcm-gold/40 group-hover:ring-tcm-gold transition-all duration-200">
+                <img
+                  src="/assets/logo/tcm-logo.jpg"
+                  alt="TCM Logo"
+                  className="w-full h-full object-cover object-center"
+                />
+              </div>
+              <div className="flex flex-col leading-none">
+                <span className="font-black text-[14px] tracking-widest text-white uppercase">
+                  Transform
+                </span>
+                <span className="font-semibold text-[10px] tracking-[0.18em] text-tcm-gold uppercase">
+                  Christian Ministries
+                </span>
+              </div>
             </Link>
 
-            {/* ── Desktop Nav ── */}
+            {/* ── Desktop Nav Links ── */}
             <div className="hidden lg:flex items-center gap-0.5">
               {navigationLinks.map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}
                   className={[
-                    'px-3.5 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 whitespace-nowrap',
-                    isActive(link.path)
-                      ? 'bg-tym-crimson/10 text-tym-crimson'
-                      : 'text-tym-slate hover:bg-gray-100 hover:text-tym-crimson',
+                    'nav-link',
+                    isActive(link.path) ? 'nav-link-active' : 'nav-link-idle',
                   ].join(' ')}
                 >
                   {link.label}
@@ -93,59 +77,74 @@ export const Navbar: React.FC = () => {
               ))}
             </div>
 
-            {/* ── Desktop CTA ── */}
-            <div className="hidden lg:flex items-center gap-2">
+            {/* ── Desktop CTAs ── */}
+            <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
+              <Link
+                to="/membership"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-tcm-gold text-tcm-navy text-xs font-black uppercase tracking-wider hover:bg-tcm-gold-lt transition-colors duration-200 shadow-gold"
+                aria-label="Become a member"
+              >
+                <Users className="w-3.5 h-3.5" />
+                Join
+              </Link>
               {user ? (
                 <>
-                  <Link to="/profile">
-                    <Button variant="outline" size="sm">Profile</Button>
+                  <Link
+                    to="/profile"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-white/30 text-white/85 text-xs font-semibold hover:border-tcm-gold hover:text-tcm-gold transition-colors duration-200"
+                  >
+                    <UserCircle2 className="w-3.5 h-3.5" />
+                    Profile
                   </Link>
-                  <Button variant="secondary" size="sm" onClick={async () => { await signOut(); }}>
+                  <button
+                    onClick={async () => { await signOut(); }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-white/20 text-white/60 text-xs font-semibold hover:border-red-400/60 hover:text-red-400 transition-colors duration-200"
+                    aria-label="Sign out"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
                     Sign Out
-                  </Button>
+                  </button>
                 </>
               ) : (
-                <>
-                  <Link to="/sign-in">
-                    <Button variant="ghost" size="sm">Sign In</Button>
-                  </Link>
-                  <Link to="/get-involved">
-                    <Button variant="primary" size="sm">Join Us →</Button>
-                  </Link>
-                </>
+                <Link
+                  to="/sign-in"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-white/30 text-white/85 text-xs font-semibold hover:border-white hover:text-white transition-colors duration-200"
+                >
+                  Sign In
+                </Link>
               )}
             </div>
 
             {/* ── Hamburger ── */}
             <button
-              className="lg:hidden relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-tym-crimson"
+              className="lg:hidden relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-tcm-gold"
               onClick={() => setIsOpen((v) => !v)}
               aria-label={isOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isOpen}
+              aria-controls="mobile-menu"
             >
               <span className={['absolute transition-all duration-200', isOpen ? 'opacity-100 rotate-0' : 'opacity-0 rotate-90'].join(' ')}>
-                <X className="w-5 h-5 text-tym-slate" />
+                <X className="w-5 h-5 text-white" />
               </span>
               <span className={['absolute transition-all duration-200', isOpen ? 'opacity-0 -rotate-90' : 'opacity-100 rotate-0'].join(' ')}>
-                <Menu className="w-5 h-5 text-tym-slate" />
+                <Menu className="w-5 h-5 text-white" />
               </span>
             </button>
 
           </div>
         </div>
 
-        {/* Active page underline */}
-        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gray-100/80" />
+        {/* Gold bottom line */}
+        <div className="h-[2px] bg-gradient-to-r from-transparent via-tcm-gold/50 to-transparent" />
       </nav>
 
       <MobileMenu
-        navLinks={navigationLinks}
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
+        navLinks={navigationLinks}
         user={user}
         signOut={signOut}
         isActive={isActive}
-        Logo={TCMLogo}
       />
     </>
   );
