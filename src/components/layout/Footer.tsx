@@ -22,7 +22,7 @@ const socials = [
   },
   { icon: Share2,  href: '#', label: 'Facebook',  bg: 'hover:bg-blue-600'   },
   { icon: AtSign,  href: '#', label: 'Instagram',  bg: 'hover:bg-pink-600'  },
-  { icon: Mail,    href: 'mailto:info@tcm.org', label: 'Email', bg: 'hover:bg-tcm-gold' },
+  { icon: Mail,    href: 'mailto:aaronakizza@gmail.com', label: 'Email', bg: 'hover:bg-tcm-gold' },
 ];
 
 export const Footer: React.FC = () => {
