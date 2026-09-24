@@ -115,14 +115,15 @@ export const Profile: React.FC = () => {
       const { url, error: uploadErr } = await uploadProfilePhoto(user.id, file);
 
       if (uploadErr) {
-        // Give a readable error instead of a raw Supabase error
-        const msg = uploadErr?.message || '';
+        // Show the full raw error so we can diagnose it
+        const msg = uploadErr?.message || uploadErr?.error || JSON.stringify(uploadErr);
+        console.error('[Profile] Upload error detail:', uploadErr);
         if (msg.includes('Bucket not found') || msg.includes('bucket')) {
-          setPhotoError('Storage not configured yet. Please contact the IT Admin.');
-        } else if (msg.includes('policy') || msg.includes('not authorized') || msg.includes('security')) {
-          setPhotoError('Upload permission denied. Please contact the IT Admin.');
+          setPhotoError('Storage bucket not found. Please contact the IT Admin.');
+        } else if (msg.includes('policy') || msg.includes('not authorized') || msg.includes('security') || msg.includes('row-level')) {
+          setPhotoError(`Permission denied: ${msg}`);
         } else {
-          setPhotoError(msg || 'Upload failed. Please try again.');
+          setPhotoError(`Upload failed: ${msg}`);
         }
         setPhotoLoading(false);
         return;

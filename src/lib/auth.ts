@@ -81,14 +81,29 @@ export async function uploadProfilePhoto(
   userId: string,
   file:   File
 ): Promise<{ url: string | null; error: any }> {
-  const ext      = file.name.split('.').pop();
-  const path     = `${userId}/avatar.${ext}`;
+  // Use a flat path — avoids folder permission issues with some RLS policies
+  const ext  = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+  const path = `${userId}-avatar.${ext}`;
+
+  // Try upload
   const { error: uploadErr } = await supabase.storage
     .from('profile-photos')
-    .upload(path, file, { upsert: true });
-  if (uploadErr) return { url: null, error: uploadErr };
+    .upload(path, file, {
+      upsert:      true,
+      cacheControl: '3600',
+      contentType: file.type,
+    });
 
-  const { data } = supabase.storage.from('profile-photos').getPublicUrl(path);
+  if (uploadErr) {
+    console.error('[uploadProfilePhoto] Upload error:', uploadErr);
+    return { url: null, error: uploadErr };
+  }
+
+  // Get public URL
+  const { data } = supabase.storage
+    .from('profile-photos')
+    .getPublicUrl(path);
+
   return { url: data.publicUrl, error: null };
 }
 
