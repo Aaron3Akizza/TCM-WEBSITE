@@ -12,6 +12,9 @@ export async function signUp(
     email,
     password,
     options: {
+      // After email confirmation Supabase redirects here.
+      // AuthCallback.tsx exchanges the token and routes to /profile.
+      emailRedirectTo: `${window.location.origin}/auth/callback`,
       data: {
         full_name: fullName,
         position:  extra?.position ?? 'member',
