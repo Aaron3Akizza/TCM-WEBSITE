@@ -59,6 +59,7 @@ export const Profile: React.FC = () => {
   const [saveOk,     setSaveOk]    = useState(false);
   const [saveErr,    setSaveErr]   = useState('');
   const [photoLoading, setPhotoLoading] = useState(false);
+  const [photoError,   setPhotoError]   = useState('');
 
   // Editable fields
   const [fullName,     setFullName]     = useState('');
@@ -93,12 +94,57 @@ export const Profile: React.FC = () => {
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+
+    setPhotoError('');
     setPhotoLoading(true);
-    const { url, error } = await uploadProfilePhoto(user.id, file);
-    if (!error && url) {
-      await updateProfile(user.id, { avatar_url: url });
+
+    try {
+      // Validate file type and size before uploading
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        setPhotoError('Please choose a JPG, PNG, or WebP image.');
+        setPhotoLoading(false);
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setPhotoError('Image must be under 5MB.');
+        setPhotoLoading(false);
+        return;
+      }
+
+      const { url, error: uploadErr } = await uploadProfilePhoto(user.id, file);
+
+      if (uploadErr) {
+        // Give a readable error instead of a raw Supabase error
+        const msg = uploadErr?.message || '';
+        if (msg.includes('Bucket not found') || msg.includes('bucket')) {
+          setPhotoError('Storage not configured yet. Please contact the IT Admin.');
+        } else if (msg.includes('policy') || msg.includes('not authorized') || msg.includes('security')) {
+          setPhotoError('Upload permission denied. Please contact the IT Admin.');
+        } else {
+          setPhotoError(msg || 'Upload failed. Please try again.');
+        }
+        setPhotoLoading(false);
+        return;
+      }
+
+      if (url) {
+        // Save the new avatar URL to the profile
+        const { error: saveErr } = await updateProfile(user.id, { avatar_url: url });
+        if (saveErr) {
+          setPhotoError('Photo uploaded but profile could not be updated. Try again.');
+        } else {
+          // Force page reload to show the new photo immediately
+          window.location.reload();
+        }
+      }
+    } catch (err: any) {
+      setPhotoError(err?.message || 'Something went wrong. Please try again.');
+    } finally {
+      setPhotoLoading(false);
+      // Reset the file input so the same file can be re-selected
+      e.target.value = '';
     }
-    setPhotoLoading(false);
   };
 
   const handleSave = async () => {
@@ -159,22 +205,46 @@ export const Profile: React.FC = () => {
         <div className="container-tcm py-10 relative z-10">
           <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6">
             {/* Avatar */}
-            <div className="relative flex-shrink-0">
-              <div className="w-24 h-24 rounded-2xl overflow-hidden ring-2 ring-tcm-gold/50 shadow-gold">
-                {profile?.avatar_url
-                  ? <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-                  : <div className="w-full h-full bg-tcm-gold/20 flex items-center justify-center">
-                      <span className="text-4xl font-black text-tcm-gold">{avatarInitial}</span>
-                    </div>
-                }
+            <div className="flex flex-col items-center gap-2 flex-shrink-0">
+              <div className="relative">
+                <div className="w-24 h-24 rounded-2xl overflow-hidden ring-2 ring-tcm-gold/50 shadow-gold">
+                  {profile?.avatar_url
+                    ? <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                    : <div className="w-full h-full bg-tcm-gold/20 flex items-center justify-center">
+                        <span className="text-4xl font-black text-tcm-gold">{avatarInitial}</span>
+                      </div>
+                  }
+                </div>
+                <label htmlFor="avatar-upload"
+                  className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-tcm-gold flex items-center justify-center cursor-pointer hover:bg-tcm-gold-lt transition-colors shadow-gold"
+                  aria-label="Change profile photo"
+                  title="Click to change photo"
+                >
+                  {photoLoading
+                    ? <Loader2 className="w-4 h-4 text-tcm-navy animate-spin" />
+                    : <Camera className="w-4 h-4 text-tcm-navy" />
+                  }
+                </label>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handlePhotoUpload}
+                  className="sr-only"
+                />
               </div>
-              <label htmlFor="avatar-upload"
-                className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-tcm-gold flex items-center justify-center cursor-pointer hover:bg-tcm-gold-lt transition-colors shadow-gold"
-                aria-label="Change profile photo"
-              >
-                {photoLoading ? <Loader2 className="w-4 h-4 text-tcm-navy animate-spin" /> : <Camera className="w-4 h-4 text-tcm-navy" />}
-              </label>
-              <input id="avatar-upload" type="file" accept="image/*" onChange={handlePhotoUpload} className="sr-only" />
+              {/* Upload status */}
+              {photoLoading && (
+                <p className="text-white/60 text-xs font-medium animate-pulse">Uploading…</p>
+              )}
+              {photoError && (
+                <p className="text-red-300 text-xs font-medium text-center max-w-[140px] leading-tight bg-red-500/20 rounded-lg px-2 py-1">
+                  {photoError}
+                </p>
+              )}
+              {!photoLoading && !photoError && (
+                <p className="text-white/35 text-[10px]">Tap 📷 to change</p>
+              )}
             </div>
 
             {/* Name + role */}
