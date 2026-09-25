@@ -81,29 +81,41 @@ export async function uploadProfilePhoto(
   userId: string,
   file:   File
 ): Promise<{ url: string | null; error: any }> {
-  // Use a flat path — avoids folder permission issues with some RLS policies
   const ext  = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
-  const path = `${userId}-avatar.${ext}`;
+  const path = `avatar-${userId}.${ext}`;
 
-  // Try upload
+  console.log('[upload] bucket: profile-photos | path:', path, '| type:', file.type, '| size:', file.size);
+
+  // First check if the bucket is accessible
+  const { data: buckets, error: listErr } = await supabase.storage.listBuckets();
+  if (listErr) {
+    console.error('[upload] Cannot list buckets:', listErr);
+    return { url: null, error: { message: `Cannot access storage: ${listErr.message}` } };
+  }
+
+  const bucketNames = buckets?.map(b => b.name) ?? [];
+  console.log('[upload] Available buckets:', bucketNames);
+
+  if (!bucketNames.includes('profile-photos')) {
+    console.error('[upload] profile-photos bucket not in list:', bucketNames);
+    return { url: null, error: { message: `Bucket not found. Available: ${bucketNames.join(', ')}` } };
+  }
+
   const { error: uploadErr } = await supabase.storage
     .from('profile-photos')
     .upload(path, file, {
-      upsert:      true,
+      upsert:       true,
       cacheControl: '3600',
-      contentType: file.type,
+      contentType:  file.type,
     });
 
   if (uploadErr) {
-    console.error('[uploadProfilePhoto] Upload error:', uploadErr);
+    console.error('[upload] Upload error:', JSON.stringify(uploadErr));
     return { url: null, error: uploadErr };
   }
 
-  // Get public URL
-  const { data } = supabase.storage
-    .from('profile-photos')
-    .getPublicUrl(path);
-
+  const { data } = supabase.storage.from('profile-photos').getPublicUrl(path);
+  console.log('[upload] Success. Public URL:', data.publicUrl);
   return { url: data.publicUrl, error: null };
 }
 
