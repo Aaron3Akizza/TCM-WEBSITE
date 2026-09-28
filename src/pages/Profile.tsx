@@ -116,8 +116,13 @@ export const Profile: React.FC = () => {
 
       if (uploadErr) {
         const msg = uploadErr?.message || uploadErr?.error || JSON.stringify(uploadErr);
-        console.error('[Profile] Upload error detail:', uploadErr);
-        setPhotoError(`Error: ${msg}`);
+        if (msg.includes('not authorized') || msg.includes('policy') || msg.includes('row-level')) {
+          setPhotoError('Permission denied. Please run the storage SQL in Supabase.');
+        } else if (msg.includes('not found') || msg.includes('bucket')) {
+          setPhotoError('Storage bucket not found. Please contact IT Admin.');
+        } else {
+          setPhotoError(`Upload failed: ${msg}`);
+        }
         setPhotoLoading(false);
         return;
       }
