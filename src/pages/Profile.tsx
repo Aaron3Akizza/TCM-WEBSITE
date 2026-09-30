@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Navbar }  from '../components/layout/Navbar';
-import { Footer }  from '../components/layout/Footer';
+import { Navbar }        from '../components/layout/Navbar';
+import { Footer }        from '../components/layout/Footer';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
-import { useAuth }  from '../hooks/useAuth';
-import { updateProfile, uploadProfilePhoto } from '../lib/auth';
+import { useAuth }       from '../hooks/useAuth';
+import { updateProfile, uploadProfilePhoto, changePassword } from '../lib/auth';
 import {
-  User, Mail, Phone, Shield, Calendar, MapPin,
-  Briefcase, BookOpen, Camera, Save, LogOut,
-  Edit3, X, CheckCircle2, Loader2,
+  User, Mail, Shield, Calendar,
+  Camera, Save, LogOut,
+  Edit3, X, CheckCircle2, Loader2, Lock, Eye, EyeOff,
+  UserCircle2, KeyRound, AlertTriangle,
 } from 'lucide-react';
 import type { MemberPosition, CareerStatus, Gender } from '../types';
 
+// ── Option lists ─────────────────────────────────────────────
 const POSITIONS: { value: MemberPosition; label: string }[] = [
   { value: 'member',          label: 'Member'          },
   { value: 'pastor',          label: 'Pastor'          },
@@ -24,7 +26,7 @@ const POSITIONS: { value: MemberPosition; label: string }[] = [
   { value: 'administration',  label: 'Administration'  },
   { value: 'other',           label: 'Other'           },
 ];
-const CAREER: { value: CareerStatus; label: string }[] = [
+const CAREER_OPTIONS: { value: CareerStatus; label: string }[] = [
   { value: 'student',        label: 'Student'        },
   { value: 'employed',       label: 'Employed'       },
   { value: 'self_employed',  label: 'Self-Employed'  },
@@ -32,138 +34,290 @@ const CAREER: { value: CareerStatus; label: string }[] = [
   { value: 'business_owner', label: 'Business Owner' },
   { value: 'other',          label: 'Other'          },
 ];
-const GENDERS: { value: Gender; label: string }[] = [
-  { value: 'male',              label: 'Male'             },
-  { value: 'female',            label: 'Female'           },
-  { value: 'prefer_not_to_say', label: 'Prefer not to say'},
+const GENDER_OPTIONS: { value: Gender; label: string }[] = [
+  { value: 'male',              label: 'Male'              },
+  { value: 'female',            label: 'Female'            },
+  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
 ];
 
-const InfoRow: React.FC<{ icon: React.ElementType; label: string; value?: string | null }> = ({ icon: Icon, label, value }) => (
-  <div className="flex items-start gap-4 py-4 border-b border-gray-50 last:border-0">
+// ── Shared helpers ────────────────────────────────────────────
+/** Read-only info row used in the view-mode display */
+const InfoRow: React.FC<{
+  icon:   React.ElementType;
+  label:  string;
+  value?: string | null;
+}> = ({ icon: Icon, label, value }) => (
+  <div className="flex items-start gap-4 py-3.5 border-b border-gray-50 last:border-0">
     <div className="w-9 h-9 rounded-xl bg-tcm-gray-soft flex items-center justify-center flex-shrink-0 mt-0.5">
       <Icon className="w-4 h-4 text-tcm-gold" />
     </div>
     <div className="flex-1 min-w-0">
-      <p className="text-[10px] font-black text-tcm-gray-mid uppercase tracking-[0.15em] mb-0.5">{label}</p>
-      <p className="font-semibold text-tcm-navy text-sm truncate">{value || '—'}</p>
+      <p className="text-[10px] font-black text-tcm-gray-mid uppercase tracking-[0.15em] mb-0.5">
+        {label}
+      </p>
+      <p className="font-semibold text-tcm-navy text-sm break-words">{value || '—'}</p>
     </div>
   </div>
 );
 
+/** Labelled form field wrapper */
+const Field: React.FC<{
+  label:    string;
+  hint?:    string;
+  children: React.ReactNode;
+}> = ({ label, hint, children }) => (
+  <div className="flex flex-col gap-1.5">
+    <label className="text-sm font-semibold text-tcm-navy">
+      {label}
+      {hint && (
+        <span className="font-normal text-tcm-gray-mid ml-2 text-xs">({hint})</span>
+      )}
+    </label>
+    {children}
+  </div>
+);
+
+/** Success banner */
+const SuccessBanner: React.FC<{ message: string }> = ({ message }) => (
+  <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+    <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+    <p className="text-green-700 text-sm font-semibold">{message}</p>
+  </div>
+);
+
+/** Error banner */
+const ErrorBanner: React.FC<{ message: string }> = ({ message }) => (
+  <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+    <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+    <p className="text-red-600 text-sm font-medium leading-snug">{message}</p>
+  </div>
+);
+
+// ── Tab definitions ───────────────────────────────────────────
+type Tab = 'profile' | 'security';
+
+// ═══════════════════════════════════════════════════════════════
+//  Main Profile component
+// ═══════════════════════════════════════════════════════════════
 export const Profile: React.FC = () => {
   const navigate = useNavigate();
   const { user, profile, loading, signOut } = useAuth();
 
-  const [editing,    setEditing]   = useState(false);
-  const [saving,     setSaving]    = useState(false);
-  const [saveOk,     setSaveOk]    = useState(false);
-  const [saveErr,    setSaveErr]   = useState('');
+  // ── Active tab ──
+  const [activeTab, setActiveTab] = useState<Tab>('profile');
+
+  // ── Profile photo state ──
   const [photoLoading, setPhotoLoading] = useState(false);
   const [photoError,   setPhotoError]   = useState('');
+  const [photoSuccess, setPhotoSuccess] = useState('');
 
-  // Editable fields
-  const [fullName,     setFullName]     = useState('');
-  const [phone,        setPhone]        = useState('');
-  const [position,     setPosition]     = useState<MemberPosition>('member');
-  const [careerStatus, setCareerStatus] = useState<CareerStatus | ''>('');
-  const [occupation,   setOccupation]   = useState('');
-  const [school,       setSchool]       = useState('');
-  const [address,      setAddress]      = useState('');
-  const [faith,        setFaith]        = useState('');
+  // ── Personal info edit state ──
+  const [editing,   setEditing]  = useState(false);
+  const [saving,    setSaving]   = useState(false);
+  const [saveOk,    setSaveOk]   = useState('');
+  const [saveErr,   setSaveErr]  = useState('');
 
+  // Personal Info fields
+  const [fullName,  setFullName]  = useState('');
+  const [username,  setUsername]  = useState('');
+  const [gender,    setGender]    = useState<Gender | ''>('');
+  const [dob,       setDob]       = useState('');
+  const [faith,     setFaith]     = useState('');
+
+  // Contact fields
+  const [phone,   setPhone]   = useState('');
+  const [address, setAddress] = useState('');
+
+  // Career fields
+  const [position,      setPosition]      = useState<MemberPosition>('member');
+  const [careerStatus,  setCareerStatus]  = useState<CareerStatus | ''>('');
+  const [occupation,    setOccupation]    = useState('');
+  const [studentStatus, setStudentStatus] = useState('');
+  const [school,        setSchool]        = useState('');
+
+  // ── Change Password state ──
+  const [currentPwd,  setCurrentPwd]  = useState('');
+  const [newPwd,      setNewPwd]      = useState('');
+  const [confirmPwd,  setConfirmPwd]  = useState('');
+  const [showCur,     setShowCur]     = useState(false);
+  const [showNew,     setShowNew]     = useState(false);
+  const [showCon,     setShowCon]     = useState(false);
+  const [pwdSaving,   setPwdSaving]   = useState(false);
+  const [pwdOk,       setPwdOk]       = useState('');
+  const [pwdErr,      setPwdErr]      = useState('');
+
+  // ── Auth guard ──
   useEffect(() => {
     if (!loading && !user) navigate('/sign-in');
   }, [user, loading, navigate]);
 
-  // Populate edit fields from profile
+  // ── Populate edit fields when profile loads ──
   useEffect(() => {
-    if (profile) {
-      setFullName(profile.full_name || '');
-      setPhone(profile.phone || '');
-      setPosition((profile.position as MemberPosition) || 'member');
-      setCareerStatus((profile.career_status as CareerStatus) || '');
-      setOccupation(profile.occupation || '');
-      setSchool(profile.school || '');
-      setAddress(profile.address || '');
-      setFaith(profile.faith || '');
-    }
+    if (!profile) return;
+    setFullName(profile.full_name   || '');
+    setUsername(profile.username    || '');
+    setPhone(profile.phone          || '');
+    setPosition((profile.position as MemberPosition) || 'member');
+    setCareerStatus((profile.career_status as CareerStatus) || '');
+    setOccupation(profile.occupation    || '');
+    setStudentStatus(profile.student_status || '');
+    setSchool(profile.school        || '');
+    setAddress(profile.address      || '');
+    setFaith(profile.faith          || '');
+    setGender((profile.gender as Gender) || '');
+    setDob(profile.date_of_birth    || '');
   }, [profile]);
 
   const handleSignOut = async () => { await signOut(); navigate('/'); };
 
+  // ── Photo upload ──────────────────────────────────────────
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-
     setPhotoError('');
+    setPhotoSuccess('');
     setPhotoLoading(true);
-
     try {
-      // Validate file type and size before uploading
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-      if (!allowedTypes.includes(file.type)) {
+      const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowed.includes(file.type)) {
         setPhotoError('Please choose a JPG, PNG, or WebP image.');
-        setPhotoLoading(false);
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        setPhotoError('Image must be under 5MB.');
-        setPhotoLoading(false);
+        setPhotoError('Image must be under 5 MB.');
         return;
       }
-
       const { url, error: uploadErr } = await uploadProfilePhoto(user.id, file);
-
       if (uploadErr) {
-        const msg = uploadErr?.message || uploadErr?.error || JSON.stringify(uploadErr);
+        const msg: string = uploadErr?.message || uploadErr?.error || JSON.stringify(uploadErr);
         if (msg.includes('not authorized') || msg.includes('policy') || msg.includes('row-level')) {
-          setPhotoError('Permission denied. Please run the storage SQL in Supabase.');
+          setPhotoError('Permission denied. Please contact IT Admin.');
         } else if (msg.includes('not found') || msg.includes('bucket')) {
           setPhotoError('Storage bucket not found. Please contact IT Admin.');
         } else {
           setPhotoError(`Upload failed: ${msg}`);
         }
-        setPhotoLoading(false);
         return;
       }
-
       if (url) {
-        // Save the new avatar URL to the profile
         const { error: saveErr } = await updateProfile(user.id, { avatar_url: url });
         if (saveErr) {
-          setPhotoError('Photo uploaded but profile could not be updated. Try again.');
+          setPhotoError('Photo uploaded but could not be saved. Please try again.');
         } else {
-          // Force page reload to show the new photo immediately
-          window.location.reload();
+          setPhotoSuccess('Profile photo updated successfully.');
+          // Reload to surface the new photo everywhere
+          setTimeout(() => window.location.reload(), 1200);
         }
       }
     } catch (err: any) {
       setPhotoError(err?.message || 'Something went wrong. Please try again.');
     } finally {
       setPhotoLoading(false);
-      // Reset the file input so the same file can be re-selected
       e.target.value = '';
     }
   };
 
+  // ── Save profile ──────────────────────────────────────────
   const handleSave = async () => {
     if (!user) return;
-    setSaving(true); setSaveErr(''); setSaveOk(false);
+    setSaving(true); setSaveErr(''); setSaveOk('');
+
+    // Validate username format if changed
+    if (username.trim() && !/^[a-z0-9_]{3,20}$/.test(username.trim())) {
+      setSaveErr('Username must be 3–20 characters and contain only lowercase letters, numbers, or underscores.');
+      setSaving(false);
+      return;
+    }
+
+    if (!fullName.trim()) {
+      setSaveErr('Full name is required.');
+      setSaving(false);
+      return;
+    }
+
     const { error } = await updateProfile(user.id, {
-      full_name:     fullName.trim(),
-      phone:         phone || null,
+      full_name:      fullName.trim(),
+      username:       username.trim().toLowerCase() || null,
+      phone:          phone    || null,
       position,
-      career_status: careerStatus || null,
-      occupation:    occupation || null,
-      school:        school || null,
-      address:       address || null,
-      faith:         faith || null,
+      gender:         (gender  || null) as Gender | null,
+      date_of_birth:  dob      || null,
+      faith:          faith    || null,
+      career_status:  (careerStatus || null) as CareerStatus | null,
+      occupation:     occupation    || null,
+      student_status: studentStatus || null,
+      school:         school        || null,
+      address:        address       || null,
     });
-    if (error) { setSaveErr(error.message || 'Failed to save.'); }
-    else       { setSaveOk(true); setEditing(false); setTimeout(() => setSaveOk(false), 3000); }
+
+    if (error) {
+      const raw: string = error?.message || JSON.stringify(error);
+      if (raw.includes('duplicate') || raw.includes('unique') || raw.includes('profiles_username_key')) {
+        setSaveErr('That username is already taken. Please choose a different one.');
+      } else {
+        setSaveErr('Your information could not be saved. Please try again.');
+      }
+    } else {
+      setSaveOk('Your information has been updated successfully.');
+      setEditing(false);
+      setTimeout(() => setSaveOk(''), 5000);
+    }
     setSaving(false);
   };
 
+  const cancelEdit = () => {
+    // Reset fields back to current profile values
+    if (profile) {
+      setFullName(profile.full_name          || '');
+      setUsername(profile.username           || '');
+      setPhone(profile.phone                 || '');
+      setPosition((profile.position as MemberPosition) || 'member');
+      setCareerStatus((profile.career_status as CareerStatus) || '');
+      setOccupation(profile.occupation       || '');
+      setStudentStatus(profile.student_status || '');
+      setSchool(profile.school               || '');
+      setAddress(profile.address             || '');
+      setFaith(profile.faith                 || '');
+      setGender((profile.gender as Gender)   || '');
+      setDob(profile.date_of_birth           || '');
+    }
+    setSaveErr('');
+    setEditing(false);
+  };
+
+  // ── Change password ───────────────────────────────────────
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwdErr(''); setPwdOk('');
+
+    if (!currentPwd) { setPwdErr('Please enter your current password.'); return; }
+    if (newPwd.length < 8) { setPwdErr('New password must be at least 8 characters.'); return; }
+    if (newPwd !== confirmPwd) { setPwdErr('New passwords do not match.'); return; }
+    if (newPwd === currentPwd) { setPwdErr('Your new password must be different from your current password.'); return; }
+
+    setPwdSaving(true);
+    const { error } = await changePassword(user!.email!, currentPwd, newPwd);
+    setPwdSaving(false);
+
+    if (error) {
+      const raw: string = error?.message || '';
+      if (raw.includes('incorrect') || raw.includes('current password')) {
+        setPwdErr('Your current password is incorrect. Please check and try again.');
+      } else if (raw.includes('same password') || raw.includes('different')) {
+        setPwdErr('Your new password must be different from your current password.');
+      } else if (raw.includes('weak') || raw.includes('strength')) {
+        setPwdErr('Password is too weak. Use a mix of letters, numbers, and symbols.');
+      } else {
+        setPwdErr(raw || 'Password could not be changed. Please try again.');
+      }
+    } else {
+      setPwdOk('Password changed successfully. Use your new password next time you sign in.');
+      setCurrentPwd(''); setNewPwd(''); setConfirmPwd('');
+      setTimeout(() => setPwdOk(''), 7000);
+    }
+  };
+
+  // ── Loading / unauthenticated guards ─────────────────────
   if (loading) return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -173,51 +327,60 @@ export const Profile: React.FC = () => {
   );
   if (!user) return null;
 
-  const avatarInitial = (profile?.full_name || user.email || 'M')[0].toUpperCase();
-  const posLabel = POSITIONS.find(p => p.value === profile?.position)?.label;
-  const careerLabel = CAREER.find(c => c.value === profile?.career_status)?.label;
-  const genderLabel = GENDERS.find(g => g.value === profile?.gender)?.label;
+  // ── Derived display values ────────────────────────────────
+  const avatarInitial   = (profile?.full_name || user.email || 'M')[0].toUpperCase();
+  const posLabel        = POSITIONS.find(p => p.value === profile?.position)?.label;
+  const genderLabel     = GENDER_OPTIONS.find(g => g.value === profile?.gender)?.label;
+  const showCareerExtra = careerStatus === 'employed' || careerStatus === 'self_employed' || careerStatus === 'business_owner';
+  const showStudentFields = careerStatus === 'student';
 
-  // ── InfoRow data ──────────────────────────────────
-  const infoRows = [
-    { icon: User,     label: 'Full Name',     value: profile?.full_name },
-    { icon: User,     label: 'Username',      value: profile?.username ? `@${profile.username}` : null },
-    { icon: Mail,     label: 'Email',         value: user.email },
-    { icon: Phone,    label: 'Phone',         value: profile?.phone },
-    { icon: Shield,   label: 'Position',      value: posLabel },
-    { icon: User,     label: 'Gender',        value: genderLabel },
-    { icon: Briefcase,label: 'Career Status', value: careerLabel },
-    { icon: Briefcase,label: 'Occupation',    value: profile?.occupation },
-    { icon: BookOpen, label: 'School',        value: profile?.school },
-    { icon: MapPin,   label: 'Address',       value: profile?.address },
-    { icon: User,     label: 'Faith',         value: profile?.faith },
-    { icon: Calendar, label: 'Member Since',  value: profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : null },
-  ];
+  // ── Tab button helper ─────────────────────────────────────
+  const TabBtn: React.FC<{ tab: Tab; icon: React.ElementType; label: string }> =
+    ({ tab, icon: Icon, label }) => (
+      <button
+        type="button"
+        onClick={() => { setActiveTab(tab); setSaveErr(''); setSaveOk(''); }}
+        className={[
+          'flex items-center gap-2 px-5 py-3 text-sm font-bold rounded-xl transition-all duration-200 whitespace-nowrap',
+          activeTab === tab
+            ? 'bg-tcm-navy text-white shadow-navy'
+            : 'text-tcm-gray-dark hover:bg-tcm-gray-soft hover:text-tcm-navy',
+        ].join(' ')}
+      >
+        <Icon className="w-4 h-4 flex-shrink-0" />
+        {label}
+      </button>
+    );
 
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
 
-      {/* Banner */}
+      {/* ── Profile Banner ── */}
       <header className="bg-navy-gradient pt-[68px] pb-0 relative overflow-hidden">
         <div className="absolute inset-0 dot-grid" />
         <div className="container-tcm py-10 relative z-10">
           <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6">
+
             {/* Avatar */}
             <div className="flex flex-col items-center gap-2 flex-shrink-0">
               <div className="relative">
                 <div className="w-24 h-24 rounded-2xl overflow-hidden ring-2 ring-tcm-gold/50 shadow-gold">
                   {profile?.avatar_url
-                    ? <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-                    : <div className="w-full h-full bg-tcm-gold/20 flex items-center justify-center">
+                    ? <img src={profile.avatar_url} alt="Your profile photo" className="w-full h-full object-cover" />
+                    : (
+                      <div className="w-full h-full bg-tcm-gold/20 flex items-center justify-center">
                         <span className="text-4xl font-black text-tcm-gold">{avatarInitial}</span>
                       </div>
+                    )
                   }
                 </div>
-                <label htmlFor="avatar-upload"
+                {/* Photo upload trigger */}
+                <label
+                  htmlFor="avatar-upload"
                   className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-tcm-gold flex items-center justify-center cursor-pointer hover:bg-tcm-gold-lt transition-colors shadow-gold"
                   aria-label="Change profile photo"
-                  title="Click to change photo"
+                  title="Click to change your profile photo"
                 >
                   {photoLoading
                     ? <Loader2 className="w-4 h-4 text-tcm-navy animate-spin" />
@@ -232,29 +395,46 @@ export const Profile: React.FC = () => {
                   className="sr-only"
                 />
               </div>
-              {/* Upload status */}
+              {/* Photo status */}
               {photoLoading && (
                 <p className="text-white/60 text-xs font-medium animate-pulse">Uploading…</p>
+              )}
+              {photoSuccess && (
+                <p className="text-green-300 text-xs font-semibold text-center max-w-[140px] leading-tight">
+                  {photoSuccess}
+                </p>
               )}
               {photoError && (
                 <p className="text-red-300 text-xs font-medium text-center max-w-[140px] leading-tight bg-red-500/20 rounded-lg px-2 py-1">
                   {photoError}
                 </p>
               )}
-              {!photoLoading && !photoError && (
+              {!photoLoading && !photoError && !photoSuccess && (
                 <p className="text-white/35 text-[10px]">Tap 📷 to change</p>
               )}
             </div>
 
-            {/* Name + role */}
+            {/* Name + role badges */}
             <div className="text-center sm:text-left">
-              <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">Member Profile</p>
-              <h1 className="text-3xl font-black text-white tracking-tight">{profile?.full_name || 'Welcome Back'}</h1>
+              <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">
+                My Profile
+              </p>
+              <h1 className="text-3xl font-black text-white tracking-tight">
+                {profile?.full_name || 'Welcome Back'}
+              </h1>
+              {profile?.username && (
+                <p className="text-tcm-gold/70 text-sm font-semibold mt-0.5">
+                  @{profile.username}
+                </p>
+              )}
               <div className="flex items-center justify-center sm:justify-start gap-2 mt-2 flex-wrap">
                 <span className="inline-flex items-center gap-1.5 bg-tcm-gold/15 border border-tcm-gold/30 rounded-full px-3 py-1 text-xs font-bold text-tcm-gold">
-                  <Shield className="w-3 h-3" />{profile?.role?.charAt(0).toUpperCase()}{profile?.role?.slice(1) || 'Member'}
+                  <Shield className="w-3 h-3" />
+                  {profile?.role
+                    ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
+                    : 'Member'}
                 </span>
-                {posLabel && (
+                {posLabel && posLabel !== 'Member' && (
                   <span className="inline-flex items-center gap-1.5 bg-white/8 border border-white/15 rounded-full px-3 py-1 text-xs font-semibold text-white/70">
                     {posLabel}
                   </span>
@@ -268,135 +448,512 @@ export const Profile: React.FC = () => {
 
       <main className="flex-grow bg-tcm-gray-soft">
         <div className="container-tcm py-10">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
-            {/* ── Info card ── */}
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100">
-                  <h2 className="font-black text-tcm-navy">Account Details</h2>
-                  <div className="flex items-center gap-2">
-                    {saveOk && (
-                      <span className="inline-flex items-center gap-1.5 text-green-600 text-xs font-semibold">
-                        <CheckCircle2 className="w-4 h-4" /> Saved
-                      </span>
-                    )}
-                    <button
-                      onClick={() => setEditing(v => !v)}
-                      className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-colors ${
-                        editing
-                          ? 'bg-red-50 text-red-500 hover:bg-red-100'
-                          : 'bg-tcm-gold/10 text-tcm-gold hover:bg-tcm-gold/20'
-                      }`}
-                    >
-                      {editing ? <><X className="w-3.5 h-3.5" /> Cancel</> : <><Edit3 className="w-3.5 h-3.5" /> Edit Profile</>}
-                    </button>
-                  </div>
-                </div>
+            {/* ── Left sidebar: Tabs + Sign Out ── */}
+            <aside className="lg:col-span-1 flex flex-col gap-4">
 
-                {!editing ? (
-                  <div className="px-7 py-2">
-                    {infoRows.map(({ icon, label, value }) => (
-                      <InfoRow key={label} icon={icon} label={label} value={value} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="px-7 py-6 space-y-5">
-                    {saveErr && (
-                      <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-                        <p className="text-red-600 text-sm font-medium">⚠ {saveErr}</p>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-semibold text-tcm-navy">Full Name</label>
-                        <input value={fullName} onChange={e => setFullName(e.target.value)} className="input-field" />
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-semibold text-tcm-navy">Phone</label>
-                        <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+256 700 000 000" className="input-field" />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-semibold text-tcm-navy">Ministry Position</label>
-                        <select value={position} onChange={e => setPosition(e.target.value as MemberPosition)} className="select-field">
-                          {POSITIONS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                        </select>
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-semibold text-tcm-navy">Career Status</label>
-                        <select value={careerStatus} onChange={e => setCareerStatus(e.target.value as CareerStatus)} className="select-field">
-                          <option value="">Select…</option>
-                          {CAREER.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-semibold text-tcm-navy">Occupation</label>
-                        <input value={occupation} onChange={e => setOccupation(e.target.value)} className="input-field" />
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-semibold text-tcm-navy">School / Institution</label>
-                        <input value={school} onChange={e => setSchool(e.target.value)} className="input-field" />
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-tcm-navy">Faith / Church Background</label>
-                      <input value={faith} onChange={e => setFaith(e.target.value)} placeholder="e.g. Pentecostal, Catholic…" className="input-field" />
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-tcm-navy">Location / Address <span className="text-tcm-gray-mid text-xs font-normal">(private)</span></label>
-                      <textarea value={address} onChange={e => setAddress(e.target.value)} rows={2}
-                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-tcm-navy placeholder-tcm-gray-mid text-sm resize-none focus:outline-none focus:border-tcm-gold transition-colors" />
-                    </div>
-
-                    <button onClick={handleSave} disabled={saving}
-                      className="btn-primary w-full py-3.5 justify-center">
-                      {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Save className="w-4 h-4" /> Save Changes</>}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ── Sidebar ── */}
-            <div className="flex flex-col gap-5">
-
-              {/* Quick links */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <h3 className="font-black text-tcm-navy text-sm uppercase tracking-wider mb-4">Quick Links</h3>
-                <div className="flex flex-col gap-2">
-                  <Link to="/events"     className="text-sm text-tcm-gray-dark hover:text-tcm-orange font-semibold transition-colors py-1.5 border-b border-gray-50">→ Upcoming Events</Link>
-                  <Link to="/gallery"    className="text-sm text-tcm-gray-dark hover:text-tcm-orange font-semibold transition-colors py-1.5 border-b border-gray-50">→ Gallery</Link>
-                  <Link to="/support"    className="text-sm text-tcm-gray-dark hover:text-tcm-orange font-semibold transition-colors py-1.5 border-b border-gray-50">→ Support the Ministry</Link>
-                  <Link to="/contact"    className="text-sm text-tcm-gray-dark hover:text-tcm-orange font-semibold transition-colors py-1.5">→ Contact Us</Link>
-                </div>
+              {/* Tab navigation */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex flex-row lg:flex-col gap-1">
+                <TabBtn tab="profile"  icon={UserCircle2} label="My Profile" />
+                <TabBtn tab="security" icon={KeyRound}    label="Security"   />
               </div>
 
-              {/* Scripture */}
-              <div className="bg-navy-gradient rounded-2xl p-6 border border-tcm-gold/20">
+              {/* Scripture card */}
+              <div className="hidden lg:block bg-navy-gradient rounded-2xl p-5 border border-tcm-gold/20">
                 <blockquote className="border-l-2 border-tcm-gold/50 pl-4">
-                  <p className="text-white/70 text-sm leading-relaxed italic" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+                  <p
+                    className="text-white/70 text-sm leading-relaxed italic"
+                    style={{ fontFamily: 'Cormorant Garamond, serif' }}
+                  >
                     "Therefore, if anyone is in Christ, he is a new creation; old things have passed away; behold, all things have become new."
                   </p>
-                  <cite className="text-tcm-gold text-xs font-bold not-italic mt-2 block">— 2 Corinthians 5:17</cite>
+                  <cite className="text-tcm-gold text-xs font-bold not-italic mt-2 block">
+                    — 2 Corinthians 5:17
+                  </cite>
                 </blockquote>
               </div>
 
+              {/* Quick links */}
+              <div className="hidden lg:block bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <h3 className="font-black text-tcm-navy text-xs uppercase tracking-wider mb-3">
+                  Quick Links
+                </h3>
+                <div className="flex flex-col gap-1">
+                  <Link to="/events"  className="text-sm text-tcm-gray-dark hover:text-tcm-orange font-semibold transition-colors py-1.5 border-b border-gray-50">→ Upcoming Events</Link>
+                  <Link to="/gallery" className="text-sm text-tcm-gray-dark hover:text-tcm-orange font-semibold transition-colors py-1.5 border-b border-gray-50">→ Gallery</Link>
+                  <Link to="/support" className="text-sm text-tcm-gray-dark hover:text-tcm-orange font-semibold transition-colors py-1.5 border-b border-gray-50">→ Support the Ministry</Link>
+                  <Link to="/contact" className="text-sm text-tcm-gray-dark hover:text-tcm-orange font-semibold transition-colors py-1.5">→ Contact Us</Link>
+                </div>
+              </div>
+
               {/* Sign out */}
-              <button onClick={handleSignOut}
-                className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-full border-2 border-red-200 text-red-500 text-sm font-bold hover:bg-red-50 hover:border-red-300 transition-colors">
+              <button
+                onClick={handleSignOut}
+                className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-full border-2 border-red-200 text-red-500 text-sm font-bold hover:bg-red-50 hover:border-red-300 transition-colors"
+              >
                 <LogOut className="w-4 h-4" /> Sign Out
               </button>
-            </div>
+            </aside>
 
+            {/* ── Main content area ── */}
+            <div className="lg:col-span-3 flex flex-col gap-6">
+
+              {/* Global save success banner (persists across tab opens) */}
+              {saveOk && <SuccessBanner message={saveOk} />}
+
+              {/* ════════════════════════════════════════
+                  MY PROFILE TAB
+              ════════════════════════════════════════ */}
+              {activeTab === 'profile' && (
+                <div className="flex flex-col gap-6">
+
+                  {/* ── Section: Personal Information ── */}
+                  <section
+                    className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                    aria-label="Personal Information"
+                  >
+                    {/* Section header */}
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                      <div>
+                        <h2 className="font-black text-tcm-navy">Personal Information</h2>
+                        <p className="text-tcm-gray-mid text-xs mt-0.5">
+                          Your name, username, gender, and faith background
+                        </p>
+                      </div>
+                      {!editing && (
+                        <button
+                          onClick={() => setEditing(true)}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-tcm-gold/10 text-tcm-gold text-xs font-bold hover:bg-tcm-gold/20 transition-colors"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" /> Edit Information
+                        </button>
+                      )}
+                    </div>
+
+                    {/* View mode */}
+                    {!editing && (
+                      <div className="px-6 py-2">
+                        <InfoRow icon={User}     label="Full Name"    value={profile?.full_name} />
+                        <InfoRow icon={User}     label="Username"     value={profile?.username ? `@${profile.username}` : null} />
+                        <InfoRow icon={Mail}     label="Email Address" value={user.email} />
+                        <InfoRow icon={User}     label="Gender"       value={genderLabel} />
+                        <InfoRow icon={Calendar} label="Date of Birth" value={
+                          profile?.date_of_birth
+                            ? new Date(profile.date_of_birth + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+                            : null
+                        } />
+                        <InfoRow icon={User}     label="Faith / Church Background" value={profile?.faith} />
+                      </div>
+                    )}
+
+                    {/* Edit mode — all sections in one form */}
+                    {editing && (
+                      <div className="px-6 py-6 space-y-6">
+                        {saveErr && <ErrorBanner message={saveErr} />}
+
+                        {/* ── Personal ── */}
+                        <div>
+                          <p className="text-xs font-black text-tcm-gray-mid uppercase tracking-widest mb-4">
+                            Personal Details
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <Field label="Full Name" hint="required">
+                              <input
+                                value={fullName}
+                                onChange={e => setFullName(e.target.value)}
+                                placeholder="Your full name"
+                                className="input-field"
+                                autoComplete="name"
+                              />
+                            </Field>
+                            <Field label="Username" hint="3–20 chars, lowercase">
+                              <input
+                                value={username}
+                                onChange={e => setUsername(e.target.value.toLowerCase())}
+                                placeholder="e.g. john_doe"
+                                className="input-field"
+                                autoComplete="username"
+                              />
+                            </Field>
+                            <Field label="Gender" hint="optional">
+                              <select
+                                value={gender}
+                                onChange={e => setGender(e.target.value as Gender)}
+                                className="select-field"
+                              >
+                                <option value="">Prefer not to say</option>
+                                {GENDER_OPTIONS.map(g => (
+                                  <option key={g.value} value={g.value}>{g.label}</option>
+                                ))}
+                              </select>
+                            </Field>
+                            <Field label="Date of Birth" hint="optional">
+                              <input
+                                type="date"
+                                value={dob}
+                                onChange={e => setDob(e.target.value)}
+                                className="input-field"
+                                max={new Date().toISOString().split('T')[0]}
+                              />
+                            </Field>
+                          </div>
+                          <div className="mt-5">
+                            <Field label="Faith / Church Background" hint="optional">
+                              <input
+                                value={faith}
+                                onChange={e => setFaith(e.target.value)}
+                                placeholder="e.g. Pentecostal, Catholic, Baptist…"
+                                className="input-field"
+                              />
+                            </Field>
+                          </div>
+                        </div>
+
+                        {/* ── Contact ── */}
+                        <div>
+                          <p className="text-xs font-black text-tcm-gray-mid uppercase tracking-widest mb-4">
+                            Contact Information
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <Field label="Phone Number" hint="optional">
+                              <input
+                                type="tel"
+                                value={phone}
+                                onChange={e => setPhone(e.target.value)}
+                                placeholder="+256 700 000 000"
+                                className="input-field"
+                                autoComplete="tel"
+                              />
+                            </Field>
+                          </div>
+                          <div className="mt-5">
+                            <Field label="Location / Address" hint="private — only visible to admins">
+                              <textarea
+                                value={address}
+                                onChange={e => setAddress(e.target.value)}
+                                placeholder="City, district or general area"
+                                rows={2}
+                                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-tcm-navy placeholder-tcm-gray-mid text-sm resize-none focus:outline-none focus:border-tcm-gold transition-colors"
+                              />
+                            </Field>
+                          </div>
+                        </div>
+
+                        {/* ── Ministry / Career ── */}
+                        <div>
+                          <p className="text-xs font-black text-tcm-gray-mid uppercase tracking-widest mb-4">
+                            Ministry &amp; Career
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <Field label="Ministry Position">
+                              <select
+                                value={position}
+                                onChange={e => setPosition(e.target.value as MemberPosition)}
+                                className="select-field"
+                              >
+                                {POSITIONS.map(p => (
+                                  <option key={p.value} value={p.value}>{p.label}</option>
+                                ))}
+                              </select>
+                            </Field>
+                            <Field label="Career / Life Status" hint="optional">
+                              <select
+                                value={careerStatus}
+                                onChange={e => setCareerStatus(e.target.value as CareerStatus)}
+                                className="select-field"
+                              >
+                                <option value="">Select status</option>
+                                {CAREER_OPTIONS.map(c => (
+                                  <option key={c.value} value={c.value}>{c.label}</option>
+                                ))}
+                              </select>
+                            </Field>
+
+                            {showCareerExtra && (
+                              <Field label="Occupation" hint="optional">
+                                <input
+                                  value={occupation}
+                                  onChange={e => setOccupation(e.target.value)}
+                                  placeholder="Your occupation or career"
+                                  className="input-field"
+                                />
+                              </Field>
+                            )}
+                          </div>
+
+                          {showStudentFields && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+                              <Field label="Student Status" hint="optional">
+                                <input
+                                  value={studentStatus}
+                                  onChange={e => setStudentStatus(e.target.value)}
+                                  placeholder="e.g. S.4, Year 2, Final Year"
+                                  className="input-field"
+                                />
+                              </Field>
+                              <Field label="School / Institution" hint="optional">
+                                <input
+                                  value={school}
+                                  onChange={e => setSchool(e.target.value)}
+                                  placeholder="School or university name"
+                                  className="input-field"
+                                />
+                              </Field>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ── Note about email ── */}
+                        <div className="bg-tcm-sky-lt/60 border border-tcm-sky/40 rounded-xl px-4 py-3">
+                          <p className="text-tcm-navy text-xs font-semibold mb-0.5">
+                            🔒 Email address cannot be changed here
+                          </p>
+                          <p className="text-tcm-gray-dark text-xs leading-relaxed">
+                            Your email (<strong>{user.email}</strong>) is used for sign-in and account recovery.
+                            Contact IT Admin if you need to update it.
+                          </p>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-3 pt-2">
+                          <button
+                            type="button"
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="btn-primary px-8 py-3 flex-1 sm:flex-none justify-center"
+                          >
+                            {saving
+                              ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
+                              : <><Save className="w-4 h-4" /> Save Changes</>
+                            }
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEdit}
+                            disabled={saving}
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-gray-200 text-tcm-gray-dark text-sm font-bold hover:border-gray-300 hover:text-tcm-navy transition-colors flex-1 sm:flex-none justify-center"
+                          >
+                            <X className="w-4 h-4" /> Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </section>
+
+                  {/* ── Section: Profile Photo (view only — upload is via banner) ── */}
+                  <section
+                    className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
+                    aria-label="Profile Photo"
+                  >
+                    <h2 className="font-black text-tcm-navy mb-1">Profile Photo</h2>
+                    <p className="text-tcm-gray-mid text-xs mb-4">
+                      Click the camera icon on your photo above to upload a new one. JPG, PNG, or WebP, max 5 MB.
+                    </p>
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden ring-2 ring-tcm-gold/30 flex-shrink-0">
+                        {profile?.avatar_url
+                          ? <img src={profile.avatar_url} alt="Current profile" className="w-full h-full object-cover" />
+                          : (
+                            <div className="w-full h-full bg-tcm-gold/20 flex items-center justify-center">
+                              <span className="text-2xl font-black text-tcm-gold">{avatarInitial}</span>
+                            </div>
+                          )
+                        }
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-tcm-navy">
+                          {profile?.avatar_url ? 'Photo uploaded' : 'No photo yet'}
+                        </p>
+                        <label
+                          htmlFor="avatar-upload-2"
+                          className="inline-flex items-center gap-1.5 mt-1.5 px-4 py-2 rounded-full bg-tcm-gold/10 text-tcm-gold text-xs font-bold hover:bg-tcm-gold/20 transition-colors cursor-pointer"
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                          {profile?.avatar_url ? 'Change Photo' : 'Upload Photo'}
+                        </label>
+                        <input
+                          id="avatar-upload-2"
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          onChange={handlePhotoUpload}
+                          className="sr-only"
+                        />
+                        {photoSuccess && (
+                          <p className="text-green-600 text-xs font-semibold mt-1">{photoSuccess}</p>
+                        )}
+                        {photoError && (
+                          <p className="text-red-500 text-xs font-medium mt-1">{photoError}</p>
+                        )}
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* ── Section: Account Details (read-only metadata) ── */}
+                  <section
+                    className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
+                    aria-label="Account Details"
+                  >
+                    <h2 className="font-black text-tcm-navy mb-4">Account Details</h2>
+                    <InfoRow icon={Mail}     label="Email Address"  value={user.email} />
+                    <InfoRow icon={Shield}   label="Account Role"   value={profile?.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : 'Member'} />
+                    <InfoRow icon={Calendar} label="Member Since"   value={
+                      profile?.created_at
+                        ? new Date(profile.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+                        : null
+                    } />
+                  </section>
+
+                </div>
+              )}
+
+              {/* ════════════════════════════════════════
+                  SECURITY TAB
+              ════════════════════════════════════════ */}
+              {activeTab === 'security' && (
+                <div className="flex flex-col gap-6">
+
+                  {/* ── Change Password ── */}
+                  <section
+                    className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                    aria-label="Change Password"
+                  >
+                    <div className="px-6 py-4 border-b border-gray-100">
+                      <h2 className="font-black text-tcm-navy">Change Password</h2>
+                      <p className="text-tcm-gray-mid text-xs mt-0.5">
+                        Enter your current password, then choose a new one.
+                      </p>
+                    </div>
+
+                    <form onSubmit={handleChangePassword} noValidate className="px-6 py-6 space-y-5">
+
+                      {pwdOk  && <SuccessBanner message={pwdOk}  />}
+                      {pwdErr && <ErrorBanner   message={pwdErr} />}
+
+                      {/* Current password */}
+                      <Field label="Current Password">
+                        <div className="relative">
+                          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-tcm-gray-mid pointer-events-none" />
+                          <input
+                            type={showCur ? 'text' : 'password'}
+                            value={currentPwd}
+                            onChange={e => { setCurrentPwd(e.target.value); setPwdErr(''); }}
+                            placeholder="Your current password"
+                            autoComplete="current-password"
+                            className="input-field pl-10 pr-11"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowCur(v => !v)}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-tcm-gray-mid hover:text-tcm-navy transition-colors"
+                            aria-label={showCur ? 'Hide password' : 'Show password'}
+                          >
+                            {showCur ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </Field>
+
+                      {/* Divider */}
+                      <div className="h-px bg-gray-100" />
+
+                      {/* New password */}
+                      <Field label="New Password" hint="at least 8 characters">
+                        <div className="relative">
+                          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-tcm-gray-mid pointer-events-none" />
+                          <input
+                            type={showNew ? 'text' : 'password'}
+                            value={newPwd}
+                            onChange={e => { setNewPwd(e.target.value); setPwdErr(''); }}
+                            placeholder="At least 8 characters"
+                            autoComplete="new-password"
+                            className="input-field pl-10 pr-11"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNew(v => !v)}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-tcm-gray-mid hover:text-tcm-navy transition-colors"
+                            aria-label={showNew ? 'Hide password' : 'Show password'}
+                          >
+                            {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </Field>
+
+                      {/* Confirm new password */}
+                      <Field label="Confirm New Password">
+                        <div className="relative">
+                          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-tcm-gray-mid pointer-events-none" />
+                          <input
+                            type={showCon ? 'text' : 'password'}
+                            value={confirmPwd}
+                            onChange={e => { setConfirmPwd(e.target.value); setPwdErr(''); }}
+                            placeholder="Repeat your new password"
+                            autoComplete="new-password"
+                            className="input-field pl-10 pr-11"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowCon(v => !v)}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-tcm-gray-mid hover:text-tcm-navy transition-colors"
+                            aria-label={showCon ? 'Hide password' : 'Show password'}
+                          >
+                            {showCon ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </Field>
+
+                      {/* Inline password strength hint */}
+                      {newPwd.length > 0 && newPwd.length < 8 && (
+                        <p className="text-amber-600 text-xs font-medium">
+                          ⚠ Password is too short — needs at least 8 characters.
+                        </p>
+                      )}
+                      {newPwd.length >= 8 && confirmPwd.length > 0 && newPwd !== confirmPwd && (
+                        <p className="text-red-500 text-xs font-medium">
+                          ⚠ Passwords do not match yet.
+                        </p>
+                      )}
+                      {newPwd.length >= 8 && confirmPwd === newPwd && confirmPwd.length > 0 && (
+                        <p className="text-green-600 text-xs font-semibold flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Passwords match.
+                        </p>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={pwdSaving}
+                        className="btn-primary w-full py-3.5 justify-center"
+                      >
+                        {pwdSaving
+                          ? <><Loader2 className="w-4 h-4 animate-spin" /> Changing Password…</>
+                          : <><Lock className="w-4 h-4" /> Change Password</>
+                        }
+                      </button>
+                    </form>
+                  </section>
+
+                  {/* ── Security info note ── */}
+                  <section
+                    className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
+                    aria-label="Password Recovery"
+                  >
+                    <h2 className="font-black text-tcm-navy mb-1">Forgot Your Password?</h2>
+                    <p className="text-tcm-gray-mid text-sm leading-relaxed mb-4">
+                      If you have forgotten your password, you can request a reset link from the sign-in page.
+                      The link will be sent to <strong className="text-tcm-navy">{user.email}</strong>.
+                    </p>
+                    <Link
+                      to="/sign-in"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-tcm-navy text-tcm-navy text-sm font-bold hover:bg-tcm-navy hover:text-white transition-colors"
+                    >
+                      Go to Sign In → Forgot Password?
+                    </Link>
+                  </section>
+
+                </div>
+              )}
+
+            </div>
           </div>
         </div>
       </main>

@@ -27,6 +27,11 @@ export async function signUp(
 }
 
 // ── Sign In ──────────────────────────────────────────────────
+// Note: email verification is NOT enforced at this stage by design.
+// Supabase project settings control whether unconfirmed users can sign in.
+// To allow login without email confirmation, go to:
+//   Supabase Dashboard → Authentication → Settings → "Enable email confirmations"
+//   and toggle it OFF (or leave it OFF for the dev phase).
 export async function signIn(
   email:    string,
   password: string
@@ -50,6 +55,32 @@ export async function resetPassword(email: string): Promise<{ error: any }> {
 }
 
 export async function updatePassword(newPassword: string): Promise<{ error: any }> {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  return { error };
+}
+
+// ── Change Password (for logged-in users) ────────────────────
+// Re-authenticates with the current password first, then updates to the new one.
+// This prevents someone who has left a session open from changing the password.
+export async function changePassword(
+  email:           string,
+  currentPassword: string,
+  newPassword:     string,
+): Promise<{ error: any }> {
+  // Step 1 — verify current credentials
+  const { error: reAuthErr } = await supabase.auth.signInWithPassword({
+    email,
+    password: currentPassword,
+  });
+  if (reAuthErr) {
+    return {
+      error: {
+        message: 'Your current password is incorrect. Please check and try again.',
+      },
+    };
+  }
+
+  // Step 2 — set new password
   const { error } = await supabase.auth.updateUser({ password: newPassword });
   return { error };
 }
