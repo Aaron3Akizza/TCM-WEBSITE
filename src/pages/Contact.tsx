@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
-import { Phone, MapPin, Send, CheckCircle2, Loader2, PlayCircle, MessageCircle } from 'lucide-react';
+import { Phone, Mail, MapPin, Send, CheckCircle2, Loader2, PlayCircle, MessageCircle, BookOpen } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-const contactInfo = [
+// ── Transform Christian Ministries contact ───────────────────
+const ministryContact = [
   {
     icon: Phone,
     label: 'Phone / WhatsApp',
@@ -14,14 +15,28 @@ const contactInfo = [
     ],
   },
   {
-    icon: PlayCircle,
-    label: 'YouTube',
-    lines: [{ text: '@transformclub-o4f', href: 'https://youtube.com/@transformclub-o4f?si=l1oPb9_XGyjJBrhC' }],
+    icon: Mail,
+    label: 'Ministry Email',
+    lines: [{ text: 'transformchristianministry@gmail.com', href: 'mailto:transformchristianministry@gmail.com' }],
   },
   {
     icon: MapPin,
     label: 'Location',
     lines: [{ text: 'Uganda', href: undefined }],
+  },
+];
+
+// ── Transform Club / Scripture Union contact ─────────────────
+const clubContact = [
+  {
+    icon: Mail,
+    label: 'Scripture Union / Club Email',
+    lines: [{ text: 'transformclub2022@gmail.com', href: 'mailto:transformclub2022@gmail.com' }],
+  },
+  {
+    icon: PlayCircle,
+    label: 'YouTube Channel',
+    lines: [{ text: '@transformclub-o4f', href: 'https://youtube.com/@transformclub-o4f?si=l1oPb9_XGyjJBrhC' }],
   },
 ];
 
@@ -75,24 +90,71 @@ export const Contact: React.FC = () => {
                 </p>
               </div>
 
-              {contactInfo.map(({ icon: Icon, label, lines }) => (
-                <div key={label} className="card p-5 flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-tcm-gold/10 border border-tcm-gold/30 flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-5 h-5 text-tcm-gold" />
+              {/* ── Transform Christian Ministries ── */}
+              <div className="bg-white rounded-2xl border border-tcm-gold/30 shadow-sm overflow-hidden">
+                <div className="bg-navy-gradient px-5 py-3 flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md overflow-hidden ring-1 ring-tcm-gold/50 flex-shrink-0">
+                    <img src="/assets/logo/tcm-logo.jpg" alt="TCM" className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-tcm-gray-mid uppercase tracking-[0.15em] mb-1">{label}</p>
-                    {lines.map(({ text, href }) => (
-                      href
-                        ? <a key={text} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer"
-                            className="block text-sm font-semibold text-tcm-navy hover:text-tcm-orange transition-colors">
-                            {text}
-                          </a>
-                        : <p key={text} className="text-sm font-semibold text-tcm-navy">{text}</p>
-                    ))}
+                    <p className="text-white font-black text-xs uppercase tracking-wider leading-none">Transform Christian Ministries</p>
+                    <p className="text-tcm-gold text-[10px] font-semibold tracking-wider">Ministry</p>
                   </div>
                 </div>
-              ))}
+                <div className="p-4 flex flex-col gap-3">
+                  {ministryContact.map(({ icon: Icon, label, lines }) => (
+                    <div key={label} className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-tcm-gold/10 border border-tcm-gold/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Icon className="w-3.5 h-3.5 text-tcm-gold" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-tcm-gray-mid uppercase tracking-[0.15em] mb-0.5">{label}</p>
+                        {lines.map(({ text, href }) => (
+                          href
+                            ? <a key={text} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer"
+                                className="block text-sm font-semibold text-tcm-navy hover:text-tcm-orange transition-colors break-all">
+                                {text}
+                              </a>
+                            : <p key={text} className="text-sm font-semibold text-tcm-navy">{text}</p>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Transform Club / Scripture Union ── */}
+              <div className="bg-white rounded-2xl border border-tcm-sky/40 shadow-sm overflow-hidden">
+                <div className="bg-tcm-navy-lt px-5 py-3 flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-md bg-tcm-sky/20 border border-tcm-sky/40 flex items-center justify-center flex-shrink-0">
+                    <BookOpen className="w-4 h-4 text-tcm-sky" />
+                  </div>
+                  <div>
+                    <p className="text-white font-black text-xs uppercase tracking-wider leading-none">Transform Club</p>
+                    <p className="text-tcm-sky text-[10px] font-semibold tracking-wider">Scripture Union</p>
+                  </div>
+                </div>
+                <div className="p-4 flex flex-col gap-3">
+                  {clubContact.map(({ icon: Icon, label, lines }) => (
+                    <div key={label} className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-tcm-sky/10 border border-tcm-sky/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Icon className="w-3.5 h-3.5 text-tcm-navy-lt" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-tcm-gray-mid uppercase tracking-[0.15em] mb-0.5">{label}</p>
+                        {lines.map(({ text, href }) => (
+                          href
+                            ? <a key={text} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer"
+                                className="block text-sm font-semibold text-tcm-navy hover:text-tcm-orange transition-colors break-all">
+                                {text}
+                              </a>
+                            : <p key={text} className="text-sm font-semibold text-tcm-navy">{text}</p>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               {/* WhatsApp quick link */}
               <a

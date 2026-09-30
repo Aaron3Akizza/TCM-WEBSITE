@@ -20,9 +20,9 @@ const socials = [
     label: 'YouTube',
     bg: 'hover:bg-red-600',
   },
-  { icon: Share2,  href: '#', label: 'Facebook',  bg: 'hover:bg-blue-600'   },
-  { icon: AtSign,  href: '#', label: 'Instagram',  bg: 'hover:bg-pink-600'  },
-  { icon: Mail,    href: 'mailto:aaronakizza@gmail.com', label: 'Email', bg: 'hover:bg-tcm-gold' },
+  { icon: Share2, href: '#', label: 'Facebook',  bg: 'hover:bg-blue-600'  },
+  { icon: AtSign, href: '#', label: 'Instagram', bg: 'hover:bg-pink-600'  },
+  { icon: Mail,   href: 'mailto:transformchristianministry@gmail.com', label: 'Email', bg: 'hover:bg-tcm-gold' },
 ];
 
 export const Footer: React.FC = () => {
@@ -121,20 +121,49 @@ export const Footer: React.FC = () => {
                   </a>
                 </div>
               </li>
+
+              {/* Ministry email */}
+              <li className="flex items-start gap-3">
+                <Mail className="w-4 h-4 text-tcm-gold mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-[10px] font-bold text-tcm-gold/70 uppercase tracking-wider mb-0.5">Ministry</p>
+                  <a href="mailto:transformchristianministry@gmail.com"
+                    className="block text-xs text-white/60 hover:text-white transition-colors break-all">
+                    transformchristianministry@gmail.com
+                  </a>
+                </div>
+              </li>
+
+              {/* Scripture Union / Club email */}
+              <li className="flex items-start gap-3">
+                <Mail className="w-4 h-4 text-tcm-sky/70 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-[10px] font-bold text-tcm-sky/70 uppercase tracking-wider mb-0.5">Scripture Union</p>
+                  <a href="mailto:transformclub2022@gmail.com"
+                    className="block text-xs text-white/60 hover:text-white transition-colors break-all">
+                    transformclub2022@gmail.com
+                  </a>
+                </div>
+              </li>
+
               <li className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 text-tcm-gold mt-0.5 flex-shrink-0" />
                 <span className="text-sm text-white/55">Uganda</span>
               </li>
+
               <li className="flex items-start gap-3">
                 <PlayCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                <a
-                  href="https://youtube.com/@transformclub-o4f?si=l1oPb9_XGyjJBrhC"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-white/65 hover:text-red-400 transition-colors"
-                >
-                  YouTube Channel
-                </a>
+                <div>
+                  <p className="text-[10px] font-bold text-tcm-sky/70 uppercase tracking-wider mb-0.5">Scripture Union</p>
+                  <a
+                    href="https://youtube.com/@transformclub-o4f?si=l1oPb9_XGyjJBrhC"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-white/60 hover:text-red-400 transition-colors"
+                  >
+                    @transformclub-o4f
+                  </a>
+                </div>
               </li>
             </ul>
           </div>
