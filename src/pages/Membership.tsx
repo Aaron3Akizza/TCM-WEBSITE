@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Navbar }    from '../components/layout/Navbar';
 import { Footer }    from '../components/layout/Footer';
 import { ITSupport } from '../components/ui/ITSupport';
-import { Loader2, Eye, EyeOff, CheckCircle2, Camera, Users, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Loader2, Eye, EyeOff, CheckCircle2, Camera, Users, AlertTriangle } from 'lucide-react';
 import { signUp }  from '../lib/auth';
 import { supabase } from '../lib/supabase';
 import { isValidEmail } from '../lib/utils';
@@ -53,6 +53,7 @@ const Field: React.FC<{ label: string; required?: boolean; hint?: string; error?
 
 // ── Main component ────────────────────────────────────────────
 export const Membership: React.FC = () => {
+  const navigate = useNavigate();
   const [step,       setStep]    = useState<1|2|3>(1);
   const [loading,    setLoading] = useState(false);
   const [success,    setSuccess] = useState(false);
@@ -83,6 +84,13 @@ export const Membership: React.FC = () => {
   // Step 3 — Contact
   const [phone,   setPhone]   = useState('');
   const [address, setAddress] = useState('');
+
+  // Auto-redirect to sign-in after successful registration
+  useEffect(() => {
+    if (!success) return;
+    const timer = setTimeout(() => navigate('/sign-in'), 4000);
+    return () => clearTimeout(timer);
+  }, [success, navigate]);
 
   // ── Photo handler ──
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,91 +198,37 @@ export const Membership: React.FC = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow pt-[68px] bg-tcm-gray-soft flex items-center justify-center px-4 py-16">
-        <div className="max-w-lg w-full space-y-4">
+        <div className="max-w-md w-full space-y-4">
 
-          {/* ── Success card ── */}
           <div className="bg-white rounded-3xl border border-tcm-gold/20 shadow-gold overflow-hidden">
             <div className="h-1.5 bg-gradient-to-r from-tcm-navy via-tcm-gold to-tcm-orange" />
-            <div className="p-8 md:p-10">
+            <div className="p-8 md:p-10 text-center">
 
-              {/* Header */}
-              <div className="text-center mb-8">
-                <div className="w-20 h-20 rounded-full bg-green-100 border-2 border-green-300 flex items-center justify-center mx-auto mb-5">
-                  <CheckCircle2 className="w-10 h-10 text-green-500" />
-                </div>
-                <h2 className="text-3xl font-black text-tcm-navy tracking-tight mb-2">
-                  Registration Complete!
-                </h2>
-                <p className="text-tcm-gray-dark text-base leading-relaxed">
-                  Welcome to Transform Christian Ministries.
-                  One last step — please verify your email to activate your account.
-                </p>
+              <div className="w-20 h-20 rounded-full bg-green-100 border-2 border-green-300 flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 className="w-10 h-10 text-green-500" />
               </div>
 
-              {/* Step-by-step instructions */}
-              <div className="bg-tcm-gray-soft rounded-2xl p-5 mb-6">
-                <p className="text-xs font-black text-tcm-navy uppercase tracking-wider mb-4">
-                  What to do now:
-                </p>
-                <div className="space-y-3">
-                  {[
-                    { text: 'Open your email inbox for the address you registered with.', highlight: false },
-                    { text: 'Look for an email from Transform Christian Ministries or Supabase with subject "Confirm your email".', highlight: false },
-                    { text: 'Check your Spam or Junk folder if you do not see it within a few minutes.', highlight: true },
-                    { text: 'Click the "Confirm your email" link inside the email.', highlight: false },
-                    { text: 'You will be redirected back to the TCM website automatically.', highlight: false },
-                    { text: 'Once verified, sign in with your email and password.', highlight: false },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <span className={[
-                        'w-5 h-5 rounded-full text-[11px] font-black flex items-center justify-center flex-shrink-0 mt-0.5',
-                        item.highlight
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-tcm-gold/20 text-tcm-navy',
-                      ].join(' ')}>
-                        {i + 1}
-                      </span>
-                      <p className={[
-                        'text-sm leading-snug',
-                        item.highlight ? 'font-semibold text-amber-700' : 'text-tcm-gray-dark',
-                      ].join(' ')}>
-                        {item.text}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <h2 className="text-3xl font-black text-tcm-navy tracking-tight mb-3">
+                Registration Complete!
+              </h2>
+              <p className="text-tcm-gray-dark text-base leading-relaxed mb-2">
+                Welcome to Transform Christian Ministries.
+              </p>
+              <p className="text-tcm-gray-mid text-sm mb-8">
+                You can now sign in with your email and password.
+                <br />Redirecting you to sign in…
+              </p>
 
-              {/* Spam warning */}
-              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6">
-                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <p className="text-amber-800 text-sm leading-snug">
-                  <strong>Important:</strong> Verification emails sometimes land in Spam or Junk.
-                  If you don't see the email, check those folders before requesting a resend.
-                  The link expires after <strong>24 hours</strong>.
-                </p>
-              </div>
+              <Link to="/sign-in" className="btn-primary w-full justify-center py-3.5">
+                Sign In Now
+              </Link>
 
-              {/* Action buttons */}
-              <div className="flex flex-col gap-3">
-                <Link to="/sign-in" className="btn-primary w-full justify-center py-3.5">
-                  Go to Sign In
-                </Link>
-                <Link
-                  to="/resend-verification"
-                  className="btn-outline-navy w-full justify-center py-3 text-sm inline-flex items-center gap-2"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Resend Verification Email
-                </Link>
-                <Link to="/" className="text-center text-sm text-tcm-gray-mid hover:text-tcm-navy transition-colors py-1">
-                  Back to Home
-                </Link>
-              </div>
+              <Link to="/" className="block mt-4 text-sm text-tcm-gray-mid hover:text-tcm-navy transition-colors">
+                Back to Home
+              </Link>
             </div>
           </div>
 
-          {/* IT Support */}
           <ITSupport variant="card" />
 
         </div>
@@ -464,19 +418,6 @@ export const Membership: React.FC = () => {
                           placeholder="City, district or general area" rows={3}
                           className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-tcm-navy placeholder-tcm-gray-mid text-sm resize-none focus:outline-none focus:border-tcm-gold transition-colors" />
                       </Field>
-
-                      {/* Email verification notice */}
-                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                        <p className="text-amber-800 text-xs font-semibold mb-1">
-                          📧 Email verification required
-                        </p>
-                        <p className="text-amber-800 text-xs leading-relaxed">
-                          After registering, a verification email will be sent to{' '}
-                          <strong>{email || 'your email address'}</strong>.
-                          You must click the link in that email before you can sign in.
-                          Check your <strong>Spam / Junk</strong> folder if you don't see it.
-                        </p>
-                      </div>
 
                       {/* Privacy note */}
                       <div className="bg-tcm-sky-lt/60 border border-tcm-sky/40 rounded-xl p-4">
