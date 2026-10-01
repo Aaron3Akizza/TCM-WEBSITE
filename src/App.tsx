@@ -15,6 +15,7 @@ import { Contact }            from './pages/Contact';
 import { SignIn }             from './pages/SignIn';
 import { SignUp }             from './pages/SignUp';
 import { Profile }            from './pages/Profile';
+import { Admin }              from './pages/Admin';
 import { AuthCallback }       from './pages/AuthCallback';
 import { ResetPassword }      from './pages/ResetPassword';
 import { ResendVerification } from './pages/ResendVerification';
@@ -42,15 +43,9 @@ function App() {
         <Route path="/sign-in"             element={<SignIn />} />
         <Route path="/sign-up"             element={<SignUp />} />
         <Route path="/profile"             element={<Profile />} />
+        <Route path="/admin"               element={<Admin />} />
 
-        {/* ── Auth flow routes ─────────────────────────────────────────
-            /auth/callback  — Supabase redirects here after email
-                              confirmation or password reset.
-            /reset-password — Member sets new password after clicking
-                              the reset link.
-            /resend-verification — Member requests a new confirmation
-                              email if the first one expired or was lost.
-        ──────────────────────────────────────────────────────────────── */}
+        {/* ── Auth flow routes ── */}
         <Route path="/auth/callback"       element={<AuthCallback />} />
         <Route path="/reset-password"      element={<ResetPassword />} />
         <Route path="/resend-verification" element={<ResendVerification />} />

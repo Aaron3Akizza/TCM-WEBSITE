@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, UserCircle2, LogOut, Users } from 'lucide-react';
+import { Menu, X, UserCircle2, LogOut, Users, Shield } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { MobileMenu } from './MobileMenu';
 import { navigationLinks } from '../../data/navigation';
@@ -8,7 +8,7 @@ import { navigationLinks } from '../../data/navigation';
 export const Navbar: React.FC = () => {
   const [isOpen,   setIsOpen]   = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user, signOut }       = useAuth();
+  const { user, profile, signOut } = useAuth();
   const location                = useLocation();
 
   useEffect(() => {
@@ -89,6 +89,15 @@ export const Navbar: React.FC = () => {
               </Link>
               {user ? (
                 <>
+                  {profile?.role === 'admin' && (
+                    <Link
+                      to="/admin"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-tcm-gold/15 border border-tcm-gold/40 text-tcm-gold text-xs font-bold hover:bg-tcm-gold/25 transition-colors duration-200"
+                    >
+                      <Shield className="w-3.5 h-3.5" />
+                      Admin
+                    </Link>
+                  )}
                   <Link
                     to="/profile"
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-white/30 text-white/85 text-xs font-semibold hover:border-tcm-gold hover:text-tcm-gold transition-colors duration-200"
@@ -143,6 +152,7 @@ export const Navbar: React.FC = () => {
         onClose={() => setIsOpen(false)}
         navLinks={navigationLinks}
         user={user}
+        profile={profile}
         signOut={signOut}
         isActive={isActive}
       />

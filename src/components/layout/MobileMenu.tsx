@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, X, Users, UserCircle2, LogOut } from 'lucide-react';
+import { ChevronRight, X, Users, UserCircle2, LogOut, Shield } from 'lucide-react';
+import type { Profile } from '../../types';
 
 interface NavLink { label: string; path: string; }
 interface MobileMenuProps {
@@ -8,12 +9,13 @@ interface MobileMenuProps {
   onClose:  () => void;
   navLinks: NavLink[];
   user:     any;
+  profile:  Profile | null;
   signOut:  () => Promise<void>;
   isActive: (path: string) => boolean;
 }
 
 export const MobileMenu: React.FC<MobileMenuProps> = ({
-  isOpen, onClose, navLinks, user, signOut, isActive,
+  isOpen, onClose, navLinks, user, profile, signOut, isActive,
 }) => (
   <>
     {/* Backdrop */}
@@ -97,18 +99,26 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
         </Link>
 
         {user ? (
-          <div className="flex gap-2">
-            <Link to="/profile" onClick={onClose}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-full border border-white/25 text-white/75 text-sm font-semibold hover:border-tcm-gold hover:text-tcm-gold transition-colors">
-              <UserCircle2 className="w-4 h-4" /> Profile
-            </Link>
-            <button
-              onClick={async () => { await signOut(); onClose(); }}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-full border border-white/20 text-white/50 text-sm font-semibold hover:border-red-400/60 hover:text-red-400 transition-colors"
-              aria-label="Sign out"
-            >
-              <LogOut className="w-4 h-4" /> Sign Out
-            </button>
+          <div className="flex flex-col gap-2">
+            {profile?.role === 'admin' && (
+              <Link to="/admin" onClick={onClose}
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-full bg-tcm-gold/15 border border-tcm-gold/40 text-tcm-gold text-sm font-bold hover:bg-tcm-gold/25 transition-colors">
+                <Shield className="w-4 h-4" /> Admin Dashboard
+              </Link>
+            )}
+            <div className="flex gap-2">
+              <Link to="/profile" onClick={onClose}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-full border border-white/25 text-white/75 text-sm font-semibold hover:border-tcm-gold hover:text-tcm-gold transition-colors">
+                <UserCircle2 className="w-4 h-4" /> Profile
+              </Link>
+              <button
+                onClick={async () => { await signOut(); onClose(); }}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-full border border-white/20 text-white/50 text-sm font-semibold hover:border-red-400/60 hover:text-red-400 transition-colors"
+                aria-label="Sign out"
+              >
+                <LogOut className="w-4 h-4" /> Sign Out
+              </button>
+            </div>
           </div>
         ) : (
           <Link to="/sign-in" onClick={onClose}

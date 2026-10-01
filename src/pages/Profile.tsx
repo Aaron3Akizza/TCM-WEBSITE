@@ -3,11 +3,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Navbar }        from '../components/layout/Navbar';
 import { Footer }        from '../components/layout/Footer';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { PhotoUpload }   from '../components/ui/PhotoUpload';
 import { useAuth }       from '../hooks/useAuth';
 import { updateProfile, uploadProfilePhoto, changePassword } from '../lib/auth';
 import {
   User, Mail, Shield, Calendar,
-  Camera, Save, LogOut,
+  Save, LogOut,
   Edit3, X, CheckCircle2, Loader2, Lock, Eye, EyeOff,
   UserCircle2, KeyRound, AlertTriangle,
 } from 'lucide-react';
@@ -107,7 +108,6 @@ export const Profile: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('profile');
 
   // ── Profile photo state ──
-  const [photoLoading, setPhotoLoading] = useState(false);
   const [photoError,   setPhotoError]   = useState('');
   const [photoSuccess, setPhotoSuccess] = useState('');
 
@@ -170,50 +170,26 @@ export const Profile: React.FC = () => {
 
   const handleSignOut = async () => { await signOut(); navigate('/'); };
 
-  // ── Photo upload ──────────────────────────────────────────
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
+  // ── Photo save (called by PhotoUpload component) ─────────
+  const handleSavePhoto = async (file: File) => {
     setPhotoError('');
     setPhotoSuccess('');
-    setPhotoLoading(true);
-    try {
-      const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-      if (!allowed.includes(file.type)) {
-        setPhotoError('Please choose a JPG, PNG, or WebP image.');
-        return;
+    const { url, error: uploadErr } = await uploadProfilePhoto(user!.id, file);
+    if (uploadErr) {
+      const msg: string = uploadErr?.message || uploadErr?.error || JSON.stringify(uploadErr);
+      if (msg.includes('not authorized') || msg.includes('policy') || msg.includes('row-level')) {
+        throw new Error('Permission denied. Please contact IT Admin.');
+      } else if (msg.includes('not found') || msg.includes('bucket')) {
+        throw new Error('Storage bucket not found. Please contact IT Admin.');
+      } else {
+        throw new Error(`Upload failed: ${msg}`);
       }
-      if (file.size > 5 * 1024 * 1024) {
-        setPhotoError('Image must be under 5 MB.');
-        return;
-      }
-      const { url, error: uploadErr } = await uploadProfilePhoto(user.id, file);
-      if (uploadErr) {
-        const msg: string = uploadErr?.message || uploadErr?.error || JSON.stringify(uploadErr);
-        if (msg.includes('not authorized') || msg.includes('policy') || msg.includes('row-level')) {
-          setPhotoError('Permission denied. Please contact IT Admin.');
-        } else if (msg.includes('not found') || msg.includes('bucket')) {
-          setPhotoError('Storage bucket not found. Please contact IT Admin.');
-        } else {
-          setPhotoError(`Upload failed: ${msg}`);
-        }
-        return;
-      }
-      if (url) {
-        const { error: saveErr } = await updateProfile(user.id, { avatar_url: url });
-        if (saveErr) {
-          setPhotoError('Photo uploaded but could not be saved. Please try again.');
-        } else {
-          setPhotoSuccess('Profile photo updated successfully.');
-          // Reload to surface the new photo everywhere
-          setTimeout(() => window.location.reload(), 1200);
-        }
-      }
-    } catch (err: any) {
-      setPhotoError(err?.message || 'Something went wrong. Please try again.');
-    } finally {
-      setPhotoLoading(false);
-      e.target.value = '';
+    }
+    if (url) {
+      const { error: saveErr } = await updateProfile(user!.id, { avatar_url: url });
+      if (saveErr) throw new Error('Photo uploaded but could not be saved. Please try again.');
+      setPhotoSuccess('Profile photo updated successfully.');
+      setTimeout(() => { setPhotoSuccess(''); window.location.reload(); }, 1500);
     }
   };
 
@@ -364,53 +340,20 @@ export const Profile: React.FC = () => {
 
             {/* Avatar */}
             <div className="flex flex-col items-center gap-2 flex-shrink-0">
-              <div className="relative">
-                <div className="w-24 h-24 rounded-2xl overflow-hidden ring-2 ring-tcm-gold/50 shadow-gold">
-                  {profile?.avatar_url
-                    ? <img src={profile.avatar_url} alt="Your profile photo" className="w-full h-full object-cover" />
-                    : (
-                      <div className="w-full h-full bg-tcm-gold/20 flex items-center justify-center">
-                        <span className="text-4xl font-black text-tcm-gold">{avatarInitial}</span>
-                      </div>
-                    )
-                  }
-                </div>
-                {/* Photo upload trigger */}
-                <label
-                  htmlFor="avatar-upload"
-                  className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-tcm-gold flex items-center justify-center cursor-pointer hover:bg-tcm-gold-lt transition-colors shadow-gold"
-                  aria-label="Change profile photo"
-                  title="Click to change your profile photo"
-                >
-                  {photoLoading
-                    ? <Loader2 className="w-4 h-4 text-tcm-navy animate-spin" />
-                    : <Camera className="w-4 h-4 text-tcm-navy" />
-                  }
-                </label>
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={handlePhotoUpload}
-                  className="sr-only"
-                />
-              </div>
-              {/* Photo status */}
-              {photoLoading && (
-                <p className="text-white/60 text-xs font-medium animate-pulse">Uploading…</p>
-              )}
+              <PhotoUpload
+                currentUrl={profile?.avatar_url}
+                initials={avatarInitial}
+                onSave={handleSavePhoto}
+              />
               {photoSuccess && (
-                <p className="text-green-300 text-xs font-semibold text-center max-w-[140px] leading-tight">
+                <p className="text-green-300 text-xs font-semibold text-center max-w-[160px] leading-tight">
                   {photoSuccess}
                 </p>
               )}
               {photoError && (
-                <p className="text-red-300 text-xs font-medium text-center max-w-[140px] leading-tight bg-red-500/20 rounded-lg px-2 py-1">
+                <p className="text-red-300 text-xs font-medium text-center max-w-[160px] leading-tight bg-red-500/20 rounded-lg px-2 py-1">
                   {photoError}
                 </p>
-              )}
-              {!photoLoading && !photoError && !photoSuccess && (
-                <p className="text-white/35 text-[10px]">Tap 📷 to change</p>
               )}
             </div>
 
@@ -741,52 +684,27 @@ export const Profile: React.FC = () => {
                     )}
                   </section>
 
-                  {/* ── Section: Profile Photo (view only — upload is via banner) ── */}
+                  {/* ── Section: Profile Photo (upload is via banner) ── */}
                   <section
                     className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
                     aria-label="Profile Photo"
                   >
                     <h2 className="font-black text-tcm-navy mb-1">Profile Photo</h2>
                     <p className="text-tcm-gray-mid text-xs mb-4">
-                      Click the camera icon on your photo above to upload a new one. JPG, PNG, or WebP, max 5 MB.
+                      Take a new photo or choose one from your device. JPG, PNG, or WebP · max 5 MB.
                     </p>
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden ring-2 ring-tcm-gold/30 flex-shrink-0">
-                        {profile?.avatar_url
-                          ? <img src={profile.avatar_url} alt="Current profile" className="w-full h-full object-cover" />
-                          : (
-                            <div className="w-full h-full bg-tcm-gold/20 flex items-center justify-center">
-                              <span className="text-2xl font-black text-tcm-gold">{avatarInitial}</span>
-                            </div>
-                          )
-                        }
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-tcm-navy">
-                          {profile?.avatar_url ? 'Photo uploaded' : 'No photo yet'}
-                        </p>
-                        <label
-                          htmlFor="avatar-upload-2"
-                          className="inline-flex items-center gap-1.5 mt-1.5 px-4 py-2 rounded-full bg-tcm-gold/10 text-tcm-gold text-xs font-bold hover:bg-tcm-gold/20 transition-colors cursor-pointer"
-                        >
-                          <Camera className="w-3.5 h-3.5" />
-                          {profile?.avatar_url ? 'Change Photo' : 'Upload Photo'}
-                        </label>
-                        <input
-                          id="avatar-upload-2"
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp,image/gif"
-                          onChange={handlePhotoUpload}
-                          className="sr-only"
-                        />
-                        {photoSuccess && (
-                          <p className="text-green-600 text-xs font-semibold mt-1">{photoSuccess}</p>
-                        )}
-                        {photoError && (
-                          <p className="text-red-500 text-xs font-medium mt-1">{photoError}</p>
-                        )}
-                      </div>
-                    </div>
+                    <PhotoUpload
+                      currentUrl={profile?.avatar_url}
+                      initials={avatarInitial}
+                      onSave={handleSavePhoto}
+                      className="items-start"
+                    />
+                    {photoSuccess && (
+                      <p className="text-green-600 text-xs font-semibold mt-2">{photoSuccess}</p>
+                    )}
+                    {photoError && (
+                      <p className="text-red-500 text-xs font-medium mt-2">{photoError}</p>
+                    )}
                   </section>
 
                   {/* ── Section: Account Details (read-only metadata) ── */}
