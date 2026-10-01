@@ -137,17 +137,73 @@ export const Membership: React.FC = () => {
     try {
       // 1. Create auth user
       const { user, error: authErr } = await signUp(email, password, fullName, { position, phone: phone || undefined });
-      if (authErr) { setGlobalErr(authErr.message); setLoading(false); return; }
+
+      // If we hit a rate limit, Supabase may have still created the account.
+      // Try signing in — if it works the account exists and we can continue.
+      if (authErr) {
+        const isRateLimit = authErr.message?.toLowerCase().includes('rate limit') ||
+                            authErr.message?.toLowerCase().includes('email rate') ||
+                            authErr.status === 429;
+        if (isRateLimit) {
+          const { data: signInData, error: signInFallbackErr } = await supabase.auth.signInWithPassword({
+            email:    email.trim().toLowerCase(),
+            password,
+          });
+          if (signInFallbackErr || !signInData?.user) {
+            // Account was NOT created — tell the user to try again later
+            setGlobalErr('Registration is temporarily unavailable due to high demand. Please try again in a few minutes.');
+            setLoading(false);
+            return;
+          }
+          // Sign-in worked — account exists, continue with profile setup
+          const existingUser = signInData.user;
+          let avatarUrl: string | null = null;
+          if (photoFile) {
+            const ext  = photoFile.name.split('.').pop();
+            const path = `${existingUser.id}/avatar.${ext}`;
+            const { error: uploadErr } = await supabase.storage
+              .from('profile-photos').upload(path, photoFile, { upsert: true });
+            if (!uploadErr) {
+              const { data } = supabase.storage.from('profile-photos').getPublicUrl(path);
+              avatarUrl = data.publicUrl;
+            }
+          }
+          await supabase.from('profiles').upsert({
+            id:             existingUser.id,
+            full_name:      fullName.trim(),
+            username:       username.trim().toLowerCase(),
+            email:          email.trim().toLowerCase(),
+            phone:          phone     || null,
+            avatar_url:     avatarUrl,
+            position,
+            gender:         gender        || null,
+            date_of_birth:  dob           || null,
+            faith:          faith         || null,
+            career_status:  careerStatus  || null,
+            occupation:     occupation    || null,
+            student_status: studentStatus || null,
+            school:         school        || null,
+            address:        address       || null,
+            role:           'member',
+          }, { onConflict: 'id' });
+          setSuccess(true);
+          setLoading(false);
+          return;
+        }
+        // Any other error — show it
+        setGlobalErr(authErr.message);
+        setLoading(false);
+        return;
+      }
+
       if (!user) { setGlobalErr('Account creation failed. Please try again.'); setLoading(false); return; }
 
       // 1b. Sign in immediately so we have an active session
-      // (needed when email confirmation is disabled — signUp alone doesn't create a session)
       const { error: signInErr } = await supabase.auth.signInWithPassword({
         email:    email.trim().toLowerCase(),
         password,
       });
       if (signInErr) {
-        // Account created but auto sign-in failed — still show success, user can sign in manually
         console.warn('[Membership] Auto sign-in failed:', signInErr.message);
       }
 
