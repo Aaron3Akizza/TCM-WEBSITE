@@ -12,9 +12,8 @@ export async function signUp(
     email,
     password,
     options: {
-      // After email confirmation Supabase redirects here.
-      // AuthCallback.tsx exchanges the token and routes to /profile.
-      emailRedirectTo: `${window.location.origin}/auth/callback`,
+      // No emailRedirectTo — avoids triggering confirmation emails
+      // when email confirmation is disabled in Supabase Auth settings.
       data: {
         full_name: fullName,
         position:  extra?.position ?? 'member',

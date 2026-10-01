@@ -448,11 +448,7 @@ export const Membership: React.FC = () => {
                               {(globalErr.toLowerCase().includes('email') || globalErr.toLowerCase().includes('already')) && (
                                 <p className="text-red-500/80 text-xs mt-1">
                                   If you already registered, try{' '}
-                                  <Link to="/sign-in" className="font-bold underline">signing in</Link>
-                                  {' '}or{' '}
-                                  <Link to="/resend-verification" className="font-bold underline">
-                                    resending your verification email
-                                  </Link>.
+                                  <Link to="/sign-in" className="font-bold underline">signing in</Link>.
                                 </p>
                               )}
                             </div>
