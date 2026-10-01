@@ -16,17 +16,14 @@ function friendlyError(raw: string): { msg: string; isUnverified: boolean } {
 
   if (r.includes('email not confirmed') || r.includes('not confirmed'))
     return {
-      msg: 'Your email address has not been verified yet. Please check your inbox (and spam/junk folder) for the verification email.',
+      msg: 'Your email address has not been verified yet. Please check your inbox for the verification email.',
       isUnverified: true,
     };
 
-  // Supabase returns "Invalid login credentials" for BOTH wrong password AND
-  // unconfirmed email — we can't tell which from the error alone, so we hint
-  // the user to check their email too.
   if (r.includes('invalid login credentials') || r.includes('invalid credentials'))
     return {
-      msg: 'Incorrect email or password. If you just registered, please check your email inbox and confirm your account before signing in.',
-      isUnverified: true,   // show the resend link as a helpful option
+      msg: 'Incorrect email or password. Please check and try again.',
+      isUnverified: false,
     };
 
   if (r.includes('too many requests') || r.includes('rate limit'))
