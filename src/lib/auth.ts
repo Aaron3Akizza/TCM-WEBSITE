@@ -103,6 +103,7 @@ export async function updateProfile(
   const safe = { ...updates };
   delete (safe as any).role;
   const { error } = await supabase.from('profiles').update(safe).eq('id', userId);
+  if (error) console.error('[updateProfile] error:', JSON.stringify(error));
   return { error };
 }
 

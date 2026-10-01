@@ -227,11 +227,14 @@ export const Profile: React.FC = () => {
     });
 
     if (error) {
-      const raw: string = error?.message || JSON.stringify(error);
+      const raw: string = error?.message || error?.details || JSON.stringify(error);
+      console.error('[handleSave] error:', raw);
       if (raw.includes('duplicate') || raw.includes('unique') || raw.includes('profiles_username_key')) {
         setSaveErr('That username is already taken. Please choose a different one.');
+      } else if (raw.includes('row-level') || raw.includes('policy') || raw.includes('not authorized')) {
+        setSaveErr('Permission denied. Please sign out and sign back in, then try again.');
       } else {
-        setSaveErr('Your information could not be saved. Please try again.');
+        setSaveErr(`Could not save: ${raw}`);
       }
     } else {
       setSaveOk('Your information has been updated successfully.');
