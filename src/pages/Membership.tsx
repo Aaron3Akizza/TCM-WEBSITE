@@ -4,7 +4,6 @@ import { Navbar }    from '../components/layout/Navbar';
 import { Footer }    from '../components/layout/Footer';
 import { ITSupport } from '../components/ui/ITSupport';
 import { Loader2, Eye, EyeOff, CheckCircle2, Camera, Users, AlertTriangle } from 'lucide-react';
-import { signUp }  from '../lib/auth';
 import { supabase } from '../lib/supabase';
 import { isValidEmail } from '../lib/utils';
 import type { MemberPosition, CareerStatus, Gender } from '../types';
@@ -135,83 +134,42 @@ export const Membership: React.FC = () => {
     setGlobalErr('');
 
     try {
-      // 1. Create auth user
-      const { user, error: authErr } = await signUp(email, password, fullName, { position, phone: phone || undefined });
+      // Create auth user — ignore ALL errors, always attempt sign-in after.
+      // Supabase creates the account even when it throws an email rate limit error.
+      await supabase.auth.signUp({
+        email:    email.trim().toLowerCase(),
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            position:  position ?? 'member',
+            phone:     phone    ?? null,
+          },
+        },
+      });
 
-      // If we hit a rate limit, Supabase may have still created the account.
-      // Try signing in — if it works the account exists and we can continue.
-      if (authErr) {
-        const isRateLimit = authErr.message?.toLowerCase().includes('rate limit') ||
-                            authErr.message?.toLowerCase().includes('email rate') ||
-                            authErr.status === 429;
-        if (isRateLimit) {
-          const { data: signInData, error: signInFallbackErr } = await supabase.auth.signInWithPassword({
-            email:    email.trim().toLowerCase(),
-            password,
-          });
-          if (signInFallbackErr || !signInData?.user) {
-            // Account was NOT created — tell the user to try again later
-            setGlobalErr('Registration is temporarily unavailable due to high demand. Please try again in a few minutes.');
-            setLoading(false);
-            return;
-          }
-          // Sign-in worked — account exists, continue with profile setup
-          const existingUser = signInData.user;
-          let avatarUrl: string | null = null;
-          if (photoFile) {
-            const ext  = photoFile.name.split('.').pop();
-            const path = `${existingUser.id}/avatar.${ext}`;
-            const { error: uploadErr } = await supabase.storage
-              .from('profile-photos').upload(path, photoFile, { upsert: true });
-            if (!uploadErr) {
-              const { data } = supabase.storage.from('profile-photos').getPublicUrl(path);
-              avatarUrl = data.publicUrl;
-            }
-          }
-          await supabase.from('profiles').upsert({
-            id:             existingUser.id,
-            full_name:      fullName.trim(),
-            username:       username.trim().toLowerCase(),
-            email:          email.trim().toLowerCase(),
-            phone:          phone     || null,
-            avatar_url:     avatarUrl,
-            position,
-            gender:         gender        || null,
-            date_of_birth:  dob           || null,
-            faith:          faith         || null,
-            career_status:  careerStatus  || null,
-            occupation:     occupation    || null,
-            student_status: studentStatus || null,
-            school:         school        || null,
-            address:        address       || null,
-            role:           'member',
-          }, { onConflict: 'id' });
-          setSuccess(true);
-          setLoading(false);
-          return;
-        }
-        // Any other error — show it
-        setGlobalErr(authErr.message);
-        setLoading(false);
-        return;
-      }
+      // Wait a moment for Supabase to finish creating the account
+      await new Promise(r => setTimeout(r, 1500));
 
-      if (!user) { setGlobalErr('Account creation failed. Please try again.'); setLoading(false); return; }
-
-      // 1b. Sign in immediately so we have an active session
-      const { error: signInErr } = await supabase.auth.signInWithPassword({
+      // Always attempt sign-in regardless of what signUp returned
+      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
         email:    email.trim().toLowerCase(),
         password,
       });
-      if (signInErr) {
-        console.warn('[Membership] Auto sign-in failed:', signInErr.message);
+
+      let activeUser = signInData?.user;
+
+      if (signInErr || !activeUser) {
+        setGlobalErr('Could not create your account. Please try again.');
+        setLoading(false);
+        return;
       }
 
       // 2. Upload photo if provided
       let avatarUrl: string | null = null;
       if (photoFile) {
         const ext  = photoFile.name.split('.').pop();
-        const path = `${user.id}/avatar.${ext}`;
+        const path = `${activeUser.id}/avatar.${ext}`;
         const { error: uploadErr } = await supabase.storage
           .from('profile-photos').upload(path, photoFile, { upsert: true });
         if (!uploadErr) {
@@ -222,7 +180,7 @@ export const Membership: React.FC = () => {
 
       // 3. Upsert full profile
       await supabase.from('profiles').upsert({
-        id:             user.id,
+        id:             activeUser.id,
         full_name:      fullName.trim(),
         username:       username.trim().toLowerCase(),
         email:          email.trim().toLowerCase(),
