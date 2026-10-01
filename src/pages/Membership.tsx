@@ -88,7 +88,7 @@ export const Membership: React.FC = () => {
   // Auto-redirect to sign-in after successful registration
   useEffect(() => {
     if (!success) return;
-    const timer = setTimeout(() => navigate('/sign-in'), 4000);
+    const timer = setTimeout(() => navigate('/profile'), 4000);
     return () => clearTimeout(timer);
   }, [success, navigate]);
 
@@ -139,6 +139,17 @@ export const Membership: React.FC = () => {
       const { user, error: authErr } = await signUp(email, password, fullName, { position, phone: phone || undefined });
       if (authErr) { setGlobalErr(authErr.message); setLoading(false); return; }
       if (!user) { setGlobalErr('Account creation failed. Please try again.'); setLoading(false); return; }
+
+      // 1b. Sign in immediately so we have an active session
+      // (needed when email confirmation is disabled — signUp alone doesn't create a session)
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email:    email.trim().toLowerCase(),
+        password,
+      });
+      if (signInErr) {
+        // Account created but auto sign-in failed — still show success, user can sign in manually
+        console.warn('[Membership] Auto sign-in failed:', signInErr.message);
+      }
 
       // 2. Upload photo if provided
       let avatarUrl: string | null = null;
@@ -215,12 +226,11 @@ export const Membership: React.FC = () => {
                 Welcome to Transform Christian Ministries.
               </p>
               <p className="text-tcm-gray-mid text-sm mb-8">
-                You can now sign in with your email and password.
-                <br />Redirecting you to sign in…
+                You are now signed in. Redirecting you to your profile…
               </p>
 
-              <Link to="/sign-in" className="btn-primary w-full justify-center py-3.5">
-                Sign In Now
+              <Link to="/profile" className="btn-primary w-full justify-center py-3.5">
+                Go to My Profile
               </Link>
 
               <Link to="/" className="block mt-4 text-sm text-tcm-gray-mid hover:text-tcm-navy transition-colors">
