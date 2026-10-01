@@ -134,9 +134,8 @@ export const Membership: React.FC = () => {
     setGlobalErr('');
 
     try {
-      // Create auth user — ignore ALL errors, always attempt sign-in after.
-      // Supabase creates the account even when it throws an email rate limit error.
-      await supabase.auth.signUp({
+      // Create auth user — capture error for debugging but continue anyway
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email:    email.trim().toLowerCase(),
         password,
         options: {
@@ -148,6 +147,8 @@ export const Membership: React.FC = () => {
         },
       });
 
+      console.log('[Registration] signUp result:', { user: signUpData?.user?.id, error: signUpError?.message, status: signUpError?.status });
+
       // Wait a moment for Supabase to finish creating the account
       await new Promise(r => setTimeout(r, 1500));
 
@@ -157,10 +158,14 @@ export const Membership: React.FC = () => {
         password,
       });
 
+      console.log('[Registration] signIn result:', { user: signInData?.user?.id, error: signInErr?.message });
+
       let activeUser = signInData?.user;
 
       if (signInErr || !activeUser) {
-        setGlobalErr('Could not create your account. Please try again.');
+        const errMsg = signUpError?.message || signInErr?.message || 'Unknown error';
+        console.error('[Registration] Failed:', errMsg);
+        setGlobalErr(`Registration failed: ${errMsg}`);
         setLoading(false);
         return;
       }
