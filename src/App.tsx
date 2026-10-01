@@ -16,6 +16,7 @@ import { SignIn }             from './pages/SignIn';
 import { SignUp }             from './pages/SignUp';
 import { Profile }            from './pages/Profile';
 import { Admin }              from './pages/Admin';
+import { AdminSponsors }      from './pages/AdminSponsors';
 import { AuthCallback }       from './pages/AuthCallback';
 import { ResetPassword }      from './pages/ResetPassword';
 import { ResendVerification } from './pages/ResendVerification';
@@ -44,6 +45,7 @@ function App() {
         <Route path="/sign-up"             element={<SignUp />} />
         <Route path="/profile"             element={<Profile />} />
         <Route path="/admin"               element={<Admin />} />
+        <Route path="/admin/sponsors"      element={<AdminSponsors />} />
 
         {/* ── Auth flow routes ── */}
         <Route path="/auth/callback"       element={<AuthCallback />} />

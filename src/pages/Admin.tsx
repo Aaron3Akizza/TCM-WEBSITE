@@ -9,7 +9,7 @@ import {
   Shield, Users, MessageSquare, ShoppingBag, Heart,
   RefreshCw, ChevronDown, ChevronUp, Search, Filter,
   Phone, Mail, Calendar, Tag, Package, Loader2,
-  CheckCircle2, AlertTriangle, Clock, X, Globe, HelpCircle,
+  CheckCircle2, AlertTriangle, Clock, X, Globe, HelpCircle, Star,
 } from 'lucide-react';
 import { DEPARTMENTS, MERCH_ITEMS } from './Support';
 
@@ -540,7 +540,7 @@ export const Admin: React.FC = () => {
           {/* ── Members quick link ── */}
           <section className="mt-10">
             <h2 className="text-xl font-black text-tcm-navy mb-4">Quick Links</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <a
                 href="https://supabase.com/dashboard"
                 target="_blank"
@@ -555,6 +555,15 @@ export const Admin: React.FC = () => {
                   <p className="text-tcm-gray-mid text-xs">Manage users, data, storage</p>
                 </div>
               </a>
+              <Link to="/admin/sponsors" className="card p-5 flex items-center gap-4 no-underline">
+                <div className="w-10 h-10 rounded-xl bg-yellow-50 border border-yellow-200 flex items-center justify-center flex-shrink-0">
+                  <Star className="w-5 h-5 text-yellow-500" />
+                </div>
+                <div>
+                  <p className="font-black text-tcm-navy text-sm">Sponsor Records</p>
+                  <p className="text-tcm-gray-mid text-xs">Current &amp; former sponsors</p>
+                </div>
+              </Link>
               <Link to="/membership" className="card p-5 flex items-center gap-4 no-underline">
                 <div className="w-10 h-10 rounded-xl bg-tcm-gold/10 border border-tcm-gold/20 flex items-center justify-center flex-shrink-0">
                   <Users className="w-5 h-5 text-tcm-gold" />
