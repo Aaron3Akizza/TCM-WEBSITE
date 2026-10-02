@@ -594,10 +594,38 @@ export const AdminPermissions: React.FC = () => {
       const { data: auditResult, error: auditErr } = await supabase.rpc('insert_permission_audit', {
         rows: auditRows,
       });
-      // Audit failure is non-fatal — log but don't throw
       if (auditErr) console.warn('[handleSave] audit log failed:', auditErr.message);
       const aResult = auditResult as any;
       if (aResult?.error) console.warn('[handleSave] audit log error:', aResult.error);
+    }
+
+    // 4. Send notification to the member so they see it on next sign-in
+    const grantedPerms = PERM_KEYS.filter(k => changes[k] === true);
+    const isNewAdmin   = needsRoleChange && targetRole === 'admin';
+    const isRevoked    = needsRoleChange && targetRole === 'member';
+
+    if (grantedPerms.length > 0 || isNewAdmin) {
+      const permList = grantedPerms
+        .map(k => PERMISSION_LABELS[k as keyof typeof PERMISSION_LABELS])
+        .join(', ');
+
+      await supabase.from('admin_notifications').insert([{
+        profile_id:      memberId,
+        type:            'access_granted',
+        title:           'You have been granted admin access',
+        body:            `${profile!.full_name} has given you administrator access to the TCM dashboard.${permList ? ` Your permissions: ${permList}.` : ''} Sign in and click the Admin button in the navigation bar to access your dashboard.`,
+        granted_by_name: profile!.full_name,
+        is_read:         false,
+      }]);
+    } else if (isRevoked) {
+      await supabase.from('admin_notifications').insert([{
+        profile_id:      memberId,
+        type:            'access_revoked',
+        title:           'Your admin access has been updated',
+        body:            `${profile!.full_name} has updated your administrator access. Please contact them if you have questions.`,
+        granted_by_name: profile!.full_name,
+        is_read:         false,
+      }]);
     }
 
     await fetchData();

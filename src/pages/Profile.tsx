@@ -6,11 +6,12 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { PhotoUpload }   from '../components/ui/PhotoUpload';
 import { useAuth }       from '../hooks/useAuth';
 import { updateProfile, uploadProfilePhoto, changePassword } from '../lib/auth';
+import { supabase } from '../lib/supabase';
 import {
   User, Mail, Shield, Calendar,
   Save, LogOut,
   Edit3, X, CheckCircle2, Loader2, Lock, Eye, EyeOff,
-  UserCircle2, KeyRound, AlertTriangle,
+  UserCircle2, KeyRound, AlertTriangle, Bell, ArrowRight,
 } from 'lucide-react';
 import type { MemberPosition, CareerStatus, Gender } from '../types';
 
@@ -107,6 +108,10 @@ export const Profile: React.FC = () => {
   // ── Active tab ──
   const [activeTab, setActiveTab] = useState<Tab>('profile');
 
+  // ── Admin notification banner ──
+  const [notification,    setNotification]    = useState<{ id: string; title: string; body: string; type: string } | null>(null);
+  const [dismissingNotif, setDismissingNotif] = useState(false);
+
   // ── Profile photo state ──
   const [photoError,   setPhotoError]   = useState('');
   const [photoSuccess, setPhotoSuccess] = useState('');
@@ -151,6 +156,22 @@ export const Profile: React.FC = () => {
     if (!loading && !user) navigate('/sign-in');
   }, [user, loading, navigate]);
 
+  // ── Fetch unread admin notification ──
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('admin_notifications')
+      .select('id, title, body, type')
+      .eq('profile_id', user.id)
+      .eq('is_read', false)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+      .then(({ data }) => {
+        if (data) setNotification(data as any);
+      });
+  }, [user]);
+
   // ── Populate edit fields when profile loads ──
   useEffect(() => {
     if (!profile) return;
@@ -169,6 +190,18 @@ export const Profile: React.FC = () => {
   }, [profile]);
 
   const handleSignOut = async () => { await signOut(); navigate('/'); };
+
+  // ── Dismiss admin notification ──
+  const dismissNotification = async () => {
+    if (!notification) return;
+    setDismissingNotif(true);
+    await supabase
+      .from('admin_notifications')
+      .update({ is_read: true })
+      .eq('id', notification.id);
+    setNotification(null);
+    setDismissingNotif(false);
+  };
 
   // ── Photo save (called by PhotoUpload component) ─────────
   const handleSavePhoto = async (file: File) => {
@@ -444,6 +477,60 @@ export const Profile: React.FC = () => {
 
             {/* ── Main content area ── */}
             <div className="lg:col-span-3 flex flex-col gap-6">
+
+            {/* ── Admin access notification banner ── */}
+              {notification && (
+                <div className={`rounded-2xl border p-5 flex items-start gap-4 ${
+                  notification.type === 'access_revoked'
+                    ? 'bg-amber-50 border-amber-300'
+                    : 'bg-tcm-navy border-tcm-gold/40'
+                }`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    notification.type === 'access_revoked'
+                      ? 'bg-amber-100'
+                      : 'bg-tcm-gold/20'
+                  }`}>
+                    <Bell className={`w-5 h-5 ${
+                      notification.type === 'access_revoked' ? 'text-amber-600' : 'text-tcm-gold'
+                    }`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-black text-sm mb-1 ${
+                      notification.type === 'access_revoked' ? 'text-amber-800' : 'text-white'
+                    }`}>
+                      {notification.title}
+                    </p>
+                    <p className={`text-xs leading-relaxed mb-3 ${
+                      notification.type === 'access_revoked' ? 'text-amber-700' : 'text-white/70'
+                    }`}>
+                      {notification.body}
+                    </p>
+                    {notification.type !== 'access_revoked' && (
+                      <Link
+                        to="/admin"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-tcm-gold text-tcm-navy text-xs font-black hover:bg-tcm-gold-lt transition-colors"
+                      >
+                        <Shield className="w-3.5 h-3.5" />
+                        Go to Admin Dashboard
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={dismissNotification}
+                    disabled={dismissingNotif}
+                    className={`flex-shrink-0 transition-colors ${
+                      notification.type === 'access_revoked'
+                        ? 'text-amber-500 hover:text-amber-700'
+                        : 'text-white/40 hover:text-white'
+                    }`}
+                    aria-label="Dismiss notification"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
 
               {/* Global save success banner (persists across tab opens) */}
               {saveOk && <SuccessBanner message={saveOk} />}
