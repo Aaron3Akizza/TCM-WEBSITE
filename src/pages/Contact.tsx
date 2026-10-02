@@ -51,9 +51,24 @@ export const Contact: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(''); setLoading(true);
+    setError('');
+
+    // Basic validation
+    if (!form.name.trim())    { setError('Please enter your full name.');      return; }
+    if (!form.email.trim())   { setError('Please enter your email address.');  return; }
+    if (!form.subject.trim()) { setError('Please enter a subject.');           return; }
+    if (!form.message.trim()) { setError('Please enter your message.');        return; }
+
+    setLoading(true);
     try {
-      const { error: err } = await supabase.from('contact_messages').insert([form]);
+      const { error: err } = await supabase.from('contact_messages').insert([{
+        name:    form.name.trim(),
+        email:   form.email.trim().toLowerCase(),
+        phone:   form.phone.trim() || null,
+        subject: form.subject.trim(),
+        message: form.message.trim(),
+        status:  'unread',
+      }]);
       if (err) throw err;
       setSuccess(true);
       setForm({ name: '', email: '', phone: '', subject: '', message: '' });
