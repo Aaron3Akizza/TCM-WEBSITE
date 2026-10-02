@@ -475,7 +475,6 @@ export const Admin: React.FC = () => {
 
   // ── Fetch support requests ──
   const fetchRequests = useCallback(async () => {
-    if (!canViewSupport) return;
     setFetching(true);
     setFetchErr('');
     const { data, error } = await supabase
@@ -491,7 +490,14 @@ export const Admin: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!loading && user && canViewSupport) fetchRequests();
+    if (loading) return;
+    if (!user) return;
+    if (canViewSupport) {
+      fetchRequests();
+    } else {
+      // Not permitted — stop the spinner so the page doesn't hang
+      setFetching(false);
+    }
   }, [loading, user, canViewSupport, fetchRequests]);
 
   // ── Update a support request ──
