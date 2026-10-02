@@ -85,15 +85,11 @@ export function useAuth(): UseAuthReturn {
 
   const isSuperAdmin = profile?.is_super_admin === true;
 
-  // A user is "any admin" if they have the admin role and at least one
-  // permission flag set (or are a super admin)
+  // A user is "any admin" if they have the admin role (regardless of
+  // whether permissions have been assigned yet) or are a super admin.
   const isAnyAdmin =
     isSuperAdmin ||
-    (profile?.role === 'admin' && permissions !== null &&
-      Object.entries(permissions).some(
-        ([k, v]) => k.startsWith('perm_') && v === true
-      )
-    );
+    profile?.role === 'admin';
 
   return {
     user,
