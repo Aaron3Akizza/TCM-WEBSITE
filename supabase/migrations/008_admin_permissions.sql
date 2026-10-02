@@ -71,8 +71,10 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  -- Allow service_role to change anything
-  IF current_setting('role') = 'service_role' THEN
+  -- Allow service_role and postgres superuser to change anything
+  IF current_setting('role') IN ('service_role', 'postgres') OR
+     current_user = 'postgres' OR
+     current_user = 'supabase_admin' THEN
     RETURN NEW;
   END IF;
 
