@@ -528,35 +528,38 @@ export const AdminPermissions: React.FC = () => {
 
     const prevPerms = targetMember.admin_permissions as AdminPermsType | null;
 
-    // 1. Set/update role on profiles
-    if (makeAdmin && targetMember.role !== 'admin') {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: 'admin' })
-        .eq('id', memberId);
-      if (error) throw new Error('Could not update member role: ' + error.message);
-    } else if (!makeAdmin && targetMember.role === 'admin' && !targetMember.is_super_admin) {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: 'member' })
-        .eq('id', memberId);
-      if (error) throw new Error('Could not update member role: ' + error.message);
+    // 1. Update role via secure RPC (bypasses trigger safely)
+    const targetRole = (makeAdmin || PERM_KEYS.some(k => changes[k])) ? 'admin' : 'member';
+    const needsRoleChange =
+      (targetRole === 'admin' && targetMember.role !== 'admin') ||
+      (targetRole === 'member' && targetMember.role === 'admin' && !targetMember.is_super_admin);
+
+    if (needsRoleChange) {
+      const { data: roleResult, error: roleErr } = await supabase.rpc('set_member_role', {
+        target_id: memberId,
+        new_role:  targetRole,
+      });
+      if (roleErr) throw new Error('Role update failed: ' + roleErr.message);
+      const result = roleResult as any;
+      if (result?.error) throw new Error(result.error);
     }
 
-    // 2. Upsert admin_permissions row
-    const permPayload: any = { profile_id: memberId, granted_by: user!.id };
-    PERM_KEYS.forEach(k => { permPayload[k] = changes[k] ?? false; });
+    // 2. Upsert permissions via secure RPC
+    const permsPayload: Record<string, boolean> = {};
+    PERM_KEYS.forEach(k => { permsPayload[k] = changes[k] ?? false; });
 
-    const { error: permErr } = await supabase
-      .from('admin_permissions')
-      .upsert(permPayload, { onConflict: 'profile_id' });
-    if (permErr) throw new Error('Could not save permissions: ' + permErr.message);
+    const { data: permResult, error: permErr } = await supabase.rpc('upsert_admin_permissions', {
+      target_id: memberId,
+      perms:     permsPayload,
+    });
+    if (permErr) throw new Error('Permission save failed: ' + permErr.message);
+    const pResult = permResult as any;
+    if (pResult?.error) throw new Error(pResult.error);
 
-    // 3. Write audit entries for each changed permission
+    // 3. Write audit entries via secure RPC
     const auditRows: any[] = [];
 
-    // Role change audit
-    if (makeAdmin !== (targetMember.role === 'admin')) {
+    if (needsRoleChange) {
       auditRows.push({
         target_profile_id: memberId,
         target_name:       targetMember.full_name,
@@ -565,12 +568,11 @@ export const AdminPermissions: React.FC = () => {
         action:            'role_changed',
         permission_key:    'role',
         previous_value:    targetMember.role,
-        new_value:         makeAdmin ? 'admin' : 'member',
-        notes:             makeAdmin ? 'Admin access granted' : 'Admin access revoked',
+        new_value:         targetRole,
+        notes:             targetRole === 'admin' ? 'Admin access granted' : 'Admin access revoked',
       });
     }
 
-    // Per-permission audit
     PERM_KEYS.forEach(k => {
       const prev = prevPerms?.[k] ?? false;
       const next = changes[k] ?? false;
@@ -589,7 +591,13 @@ export const AdminPermissions: React.FC = () => {
     });
 
     if (auditRows.length > 0) {
-      await supabase.from('admin_permission_audit').insert(auditRows);
+      const { data: auditResult, error: auditErr } = await supabase.rpc('insert_permission_audit', {
+        rows: auditRows,
+      });
+      // Audit failure is non-fatal — log but don't throw
+      if (auditErr) console.warn('[handleSave] audit log failed:', auditErr.message);
+      const aResult = auditResult as any;
+      if (aResult?.error) console.warn('[handleSave] audit log error:', aResult.error);
     }
 
     await fetchData();
