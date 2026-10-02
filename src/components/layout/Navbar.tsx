@@ -8,7 +8,7 @@ import { navigationLinks } from '../../data/navigation';
 export const Navbar: React.FC = () => {
   const [isOpen,   setIsOpen]   = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, isSuperAdmin, isAnyAdmin } = useAuth();
   const location                = useLocation();
 
   useEffect(() => {
@@ -89,10 +89,14 @@ export const Navbar: React.FC = () => {
               </Link>
               {user ? (
                 <>
-                  {profile?.role === 'admin' && (
+                  {isAnyAdmin && (
                     <Link
                       to="/admin"
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-tcm-gold/15 border border-tcm-gold/40 text-tcm-gold text-xs font-bold hover:bg-tcm-gold/25 transition-colors duration-200"
+                      className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-colors duration-200 ${
+                        isSuperAdmin
+                          ? 'bg-purple-500/20 border border-purple-400/40 text-purple-200 hover:bg-purple-500/30'
+                          : 'bg-tcm-gold/15 border border-tcm-gold/40 text-tcm-gold hover:bg-tcm-gold/25'
+                      }`}
                     >
                       <Shield className="w-3.5 h-3.5" />
                       Admin
@@ -155,6 +159,8 @@ export const Navbar: React.FC = () => {
         profile={profile}
         signOut={signOut}
         isActive={isActive}
+        isAnyAdmin={isAnyAdmin}
+        isSuperAdmin={isSuperAdmin}
       />
     </>
   );

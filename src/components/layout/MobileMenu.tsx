@@ -1,21 +1,23 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, X, Users, UserCircle2, LogOut, Shield } from 'lucide-react';
+import { ChevronRight, X, Users, UserCircle2, LogOut, Shield, Star } from 'lucide-react';
 import type { Profile } from '../../types';
 
 interface NavLink { label: string; path: string; }
 interface MobileMenuProps {
-  isOpen:   boolean;
-  onClose:  () => void;
-  navLinks: NavLink[];
-  user:     any;
-  profile:  Profile | null;
-  signOut:  () => Promise<void>;
-  isActive: (path: string) => boolean;
+  isOpen:      boolean;
+  onClose:     () => void;
+  navLinks:    NavLink[];
+  user:        any;
+  profile:     Profile | null;
+  signOut:     () => Promise<void>;
+  isActive:    (path: string) => boolean;
+  isAnyAdmin?: boolean;
+  isSuperAdmin?: boolean;
 }
 
 export const MobileMenu: React.FC<MobileMenuProps> = ({
-  isOpen, onClose, navLinks, user, profile, signOut, isActive,
+  isOpen, onClose, navLinks, user, profile: _profile, signOut, isActive, isAnyAdmin, isSuperAdmin,
 }) => (
   <>
     {/* Backdrop */}
@@ -100,10 +102,15 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
 
         {user ? (
           <div className="flex flex-col gap-2">
-            {profile?.role === 'admin' && (
+            {isAnyAdmin && (
               <Link to="/admin" onClick={onClose}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-full bg-tcm-gold/15 border border-tcm-gold/40 text-tcm-gold text-sm font-bold hover:bg-tcm-gold/25 transition-colors">
-                <Shield className="w-4 h-4" /> Admin Dashboard
+                className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-full text-sm font-bold transition-colors ${
+                  isSuperAdmin
+                    ? 'bg-purple-500/20 border border-purple-400/40 text-purple-200 hover:bg-purple-500/30'
+                    : 'bg-tcm-gold/15 border border-tcm-gold/40 text-tcm-gold hover:bg-tcm-gold/25'
+                }`}>
+                {isSuperAdmin ? <Star className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
+                {isSuperAdmin ? 'Super Admin' : 'Admin Dashboard'}
               </Link>
             )}
             <div className="flex gap-2">

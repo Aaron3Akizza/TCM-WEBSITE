@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { DEPARTMENTS, MERCH_ITEMS } from './Support';
 
+import { hasPerm } from '../types/database';
+
 // ── Types ─────────────────────────────────────────────────────
 type SupportStatus = 'new' | 'contacted' | 'processing' | 'completed';
 type SupportType   = 'ministry_department' | 'merchandise' | 'general' | 'other';
@@ -301,7 +303,7 @@ const RequestRow: React.FC<{
 // ═══════════════════════════════════════════════════════════════
 export const Admin: React.FC = () => {
   const navigate = useNavigate();
-  const { user, profile, loading } = useAuth();
+  const { user, profile, permissions, loading, isSuperAdmin } = useAuth();
 
   const [requests,    setRequests]    = useState<SupportRequest[]>([]);
   const [fetching,    setFetching]    = useState(true);
@@ -310,15 +312,25 @@ export const Admin: React.FC = () => {
   const [filterType,  setFilterType]  = useState<SupportType | ''>('');
   const [filterStatus,setFilterStatus]= useState<SupportStatus | ''>('');
 
-  // ── Auth + role guard ──
+  // ── Auth + permission guard ──
+  // Must be admin role AND have at least one permission (or be super admin)
   useEffect(() => {
     if (loading) return;
-    if (!user)              { navigate('/sign-in'); return; }
-    if (profile && profile.role !== 'admin') { navigate('/profile'); }
-  }, [user, profile, loading, navigate]);
+    if (!user) { navigate('/sign-in'); return; }
+    if (!profile) return;
+    const isAdmin = isSuperAdmin || profile.role === 'admin';
+    if (profile && !isAdmin) { navigate('/profile'); }
+  }, [user, profile, loading, isSuperAdmin, navigate]);
+
+  // ── Can view support requests? ──
+  const canViewSupport = isSuperAdmin ||
+    hasPerm(permissions, 'perm_view_support') ||
+    hasPerm(permissions, 'perm_manage_support') ||
+    hasPerm(permissions, 'perm_full_admin');
 
   // ── Fetch support requests ──
   const fetchRequests = useCallback(async () => {
+    if (!canViewSupport) return;
     setFetching(true);
     setFetchErr('');
     const { data, error } = await supabase
@@ -334,8 +346,8 @@ export const Admin: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!loading && user && profile?.role === 'admin') fetchRequests();
-  }, [loading, user, profile, fetchRequests]);
+    if (!loading && user && canViewSupport) fetchRequests();
+  }, [loading, user, canViewSupport, fetchRequests]);
 
   // ── Update a request ──
   const handleUpdate = async (id: string, status: SupportStatus, notes: string) => {
@@ -375,7 +387,8 @@ export const Admin: React.FC = () => {
     </div>
   );
 
-  if (!user || (profile && profile.role !== 'admin')) return null;
+  const isAdmin = isSuperAdmin || profile?.role === 'admin';
+  if (!user || (profile && !isAdmin)) return null;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -394,9 +407,15 @@ export const Admin: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 bg-tcm-gold/15 border border-tcm-gold/30 rounded-full px-3 py-1.5 text-xs font-bold text-tcm-gold">
-                <Shield className="w-3.5 h-3.5" /> Administrator
-              </span>
+              {isSuperAdmin ? (
+                <span className="inline-flex items-center gap-1.5 bg-purple-500/20 border border-purple-400/40 rounded-full px-3 py-1.5 text-xs font-bold text-purple-200">
+                  <Star className="w-3.5 h-3.5" /> Super Administrator
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 bg-tcm-gold/15 border border-tcm-gold/30 rounded-full px-3 py-1.5 text-xs font-bold text-tcm-gold">
+                  <Shield className="w-3.5 h-3.5" /> Administrator
+                </span>
+              )}
               <Link to="/profile" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-white/25 text-white/75 text-xs font-semibold hover:border-white hover:text-white transition-colors">
                 My Profile
               </Link>
@@ -541,12 +560,8 @@ export const Admin: React.FC = () => {
           <section className="mt-10">
             <h2 className="text-xl font-black text-tcm-navy mb-4">Quick Links</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <a
-                href="https://supabase.com/dashboard"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="card p-5 flex items-center gap-4 no-underline"
-              >
+              <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer"
+                className="card p-5 flex items-center gap-4 no-underline">
                 <div className="w-10 h-10 rounded-xl bg-tcm-navy/8 border border-tcm-navy/15 flex items-center justify-center flex-shrink-0">
                   <Shield className="w-5 h-5 text-tcm-navy" />
                 </div>
@@ -555,24 +570,28 @@ export const Admin: React.FC = () => {
                   <p className="text-tcm-gray-mid text-xs">Manage users, data, storage</p>
                 </div>
               </a>
-              <Link to="/admin/sponsors" className="card p-5 flex items-center gap-4 no-underline">
-                <div className="w-10 h-10 rounded-xl bg-yellow-50 border border-yellow-200 flex items-center justify-center flex-shrink-0">
-                  <Star className="w-5 h-5 text-yellow-500" />
-                </div>
-                <div>
-                  <p className="font-black text-tcm-navy text-sm">Sponsor Records</p>
-                  <p className="text-tcm-gray-mid text-xs">Current &amp; former sponsors</p>
-                </div>
-              </Link>
-              <Link to="/membership" className="card p-5 flex items-center gap-4 no-underline">
-                <div className="w-10 h-10 rounded-xl bg-tcm-gold/10 border border-tcm-gold/20 flex items-center justify-center flex-shrink-0">
-                  <Users className="w-5 h-5 text-tcm-gold" />
-                </div>
-                <div>
-                  <p className="font-black text-tcm-navy text-sm">Membership Page</p>
-                  <p className="text-tcm-gray-mid text-xs">View registration form</p>
-                </div>
-              </Link>
+              {(isSuperAdmin || hasPerm(permissions, 'perm_view_sponsors') || hasPerm(permissions, 'perm_manage_sponsors') || hasPerm(permissions, 'perm_full_admin')) && (
+                <Link to="/admin/sponsors" className="card p-5 flex items-center gap-4 no-underline">
+                  <div className="w-10 h-10 rounded-xl bg-yellow-50 border border-yellow-200 flex items-center justify-center flex-shrink-0">
+                    <Star className="w-5 h-5 text-yellow-500" />
+                  </div>
+                  <div>
+                    <p className="font-black text-tcm-navy text-sm">Sponsor Records</p>
+                    <p className="text-tcm-gray-mid text-xs">Current &amp; former sponsors</p>
+                  </div>
+                </Link>
+              )}
+              {(isSuperAdmin || hasPerm(permissions, 'perm_view_members') || hasPerm(permissions, 'perm_manage_members') || hasPerm(permissions, 'perm_full_admin')) && (
+                <Link to="/membership" className="card p-5 flex items-center gap-4 no-underline">
+                  <div className="w-10 h-10 rounded-xl bg-tcm-gold/10 border border-tcm-gold/20 flex items-center justify-center flex-shrink-0">
+                    <Users className="w-5 h-5 text-tcm-gold" />
+                  </div>
+                  <div>
+                    <p className="font-black text-tcm-navy text-sm">Membership Page</p>
+                    <p className="text-tcm-gray-mid text-xs">View registration form</p>
+                  </div>
+                </Link>
+              )}
               <Link to="/support" className="card p-5 flex items-center gap-4 no-underline">
                 <div className="w-10 h-10 rounded-xl bg-tcm-orange/10 border border-tcm-orange/20 flex items-center justify-center flex-shrink-0">
                   <Heart className="w-5 h-5 text-tcm-orange" />
@@ -582,8 +601,31 @@ export const Admin: React.FC = () => {
                   <p className="text-tcm-gray-mid text-xs">View public support form</p>
                 </div>
               </Link>
+              {(isSuperAdmin || hasPerm(permissions, 'perm_manage_admins') || hasPerm(permissions, 'perm_full_admin')) && (
+                <Link to="/admin/permissions" className="card p-5 flex items-center gap-4 no-underline">
+                  <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center flex-shrink-0">
+                    <Shield className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="font-black text-tcm-navy text-sm">Manage Permissions</p>
+                    <p className="text-tcm-gray-mid text-xs">Assign admin access to members</p>
+                  </div>
+                </Link>
+              )}
             </div>
           </section>
+
+          {/* ── No-permission notice ── */}
+          {!canViewSupport && !isSuperAdmin && (
+            <div className="mt-6 bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+              <Shield className="w-10 h-10 text-amber-500 mx-auto mb-3" />
+              <p className="font-black text-amber-800 mb-1">Limited Access</p>
+              <p className="text-amber-700 text-sm leading-relaxed">
+                Your admin account has not been granted permission to view support requests.
+                Contact a Super Administrator to have permissions assigned to your account.
+              </p>
+            </div>
+          )}
 
         </div>
       </main>

@@ -543,7 +543,6 @@ export const SponsorRegistration: React.FC = () => {
                       <div className="space-y-3">
                         {paymentMethods.map(pm => {
                           const isSelected = selectedMethodId === pm.id;
-                          const isMtn  = pm.name.toLowerCase().includes('mtn');
                           const isBank = pm.name.toLowerCase().includes('bank');
                           return (
                             <div key={pm.id}

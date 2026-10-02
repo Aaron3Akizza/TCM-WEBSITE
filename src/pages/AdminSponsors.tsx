@@ -7,6 +7,7 @@ import { useAuth }        from '../hooks/useAuth';
 import { supabase }       from '../lib/supabase';
 import { isValidEmail }   from '../lib/utils';
 import { DEPARTMENTS }    from './Support';
+import { hasPerm } from '../types/database';
 import {
   Shield, Users, Heart, Star, RefreshCw,
   ChevronDown, ChevronUp, Search, Filter,
@@ -663,7 +664,7 @@ const SponsorRow: React.FC<SponsorRowProps> = ({ sponsor, onEdit, onAddRecord, o
 // ═══════════════════════════════════════════════════════════════
 export const AdminSponsors: React.FC = () => {
   const navigate = useNavigate();
-  const { user, profile, loading } = useAuth();
+  const { user, profile, permissions, loading, isSuperAdmin } = useAuth();
 
   const [sponsors,       setSponsors]       = useState<Sponsor[]>([]);
   const [fetching,       setFetching]       = useState(true);
@@ -679,11 +680,20 @@ export const AdminSponsors: React.FC = () => {
   const [addRecordFor,    setAddRecordFor]    = useState<Sponsor | null>(null);
   const [statusChangeRec, setStatusChangeRec] = useState<SponsorshipRecord | null>(null);
 
-  // ── Auth guard ──
+  // ── Auth + permission guard ──
+  const canAccess = isSuperAdmin ||
+    hasPerm(permissions, 'perm_view_sponsors') ||
+    hasPerm(permissions, 'perm_manage_sponsors') ||
+    hasPerm(permissions, 'perm_verify_sponsors') ||
+    hasPerm(permissions, 'perm_full_admin');
+
   useEffect(() => {
     if (loading) return;
-    if (!user)                                { navigate('/sign-in'); return; }
-    if (profile && profile.role !== 'admin')  { navigate('/profile'); }
+    if (!user)                               { navigate('/sign-in'); return; }
+    if (!profile) return;
+    const isAdmin = isSuperAdmin || profile.role === 'admin';
+    if (!isAdmin) { navigate('/profile'); return; }
+    if (isAdmin && !canAccess) { navigate('/admin'); }
   }, [user, profile, loading, navigate]);
 
   // ── Fetch ──
@@ -791,7 +801,9 @@ export const AdminSponsors: React.FC = () => {
   if (loading) return (
     <div className="flex flex-col min-h-screen"><Navbar /><main className="flex-grow pt-[68px]"><LoadingSpinner /></main><Footer /></div>
   );
-  if (!user || (profile && profile.role !== 'admin')) return null;
+  const isAdmin = isSuperAdmin || profile?.role === 'admin';
+  if (!user || (profile && !isAdmin)) return null;
+  if (isAdmin && !canAccess) return null;
 
   return (
     <div className="flex flex-col min-h-screen">
