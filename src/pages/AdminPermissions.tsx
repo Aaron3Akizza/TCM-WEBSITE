@@ -9,7 +9,6 @@ import {
   type AdminPermissions as AdminPermsType,
   PERMISSION_LABELS,
   PERMISSION_GROUPS,
-  hasPerm,
 } from '../types/database';
 import {
   Shield, Users, Search, Loader2, AlertTriangle,
@@ -461,7 +460,7 @@ const AuditRow: React.FC<{ entry: AuditEntry }> = ({ entry }) => {
 // ═══════════════════════════════════════════════════════════════
 export const AdminPermissions: React.FC = () => {
   const navigate  = useNavigate();
-  const { user, profile, permissions, loading, isSuperAdmin } = useAuth();
+  const { user, profile, loading, isSuperAdmin } = useAuth();
 
   const [members,    setMembers]    = useState<MemberRow[]>([]);
   const [audit,      setAudit]      = useState<AuditEntry[]>([]);
@@ -472,16 +471,13 @@ export const AdminPermissions: React.FC = () => {
   const [showAudit,  setShowAudit]  = useState(false);
   const [editMember, setEditMember] = useState<MemberRow | null>(null);
 
-  // ── Auth guard: must be super admin OR have perm_manage_admins ──
+  // ── Auth guard: SUPER ADMIN ONLY ──
   useEffect(() => {
     if (loading) return;
     if (!user) { navigate('/sign-in'); return; }
     if (!profile) return;
-    const canManage = isSuperAdmin ||
-      hasPerm(permissions, 'perm_manage_admins') ||
-      hasPerm(permissions, 'perm_full_admin');
-    if (!canManage) { navigate('/admin'); }
-  }, [user, profile, permissions, loading, isSuperAdmin, navigate]);
+    if (!isSuperAdmin) { navigate('/admin'); }
+  }, [user, profile, loading, isSuperAdmin, navigate]);
 
   // ── Fetch all members + their permissions ──
   const fetchData = useCallback(async () => {
@@ -684,9 +680,7 @@ export const AdminPermissions: React.FC = () => {
   );
   if (!user) return null;
 
-  const canManage = isSuperAdmin ||
-    hasPerm(permissions, 'perm_manage_admins') ||
-    hasPerm(permissions, 'perm_full_admin');
+  const canManage = isSuperAdmin;
   if (!canManage) return null;
 
   return (

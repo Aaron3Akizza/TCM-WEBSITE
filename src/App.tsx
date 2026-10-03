@@ -18,6 +18,7 @@ import { Profile }            from './pages/Profile';
 import { Admin }              from './pages/Admin';
 import { AdminSponsors }      from './pages/AdminSponsors';
 import { AdminPermissions }   from './pages/AdminPermissions';
+import { AdminMembers }       from './pages/AdminMembers';
 import { SponsorRegistration } from './pages/SponsorRegistration';
 import { AuthCallback }       from './pages/AuthCallback';
 import { ResetPassword }      from './pages/ResetPassword';
@@ -49,6 +50,7 @@ function App() {
         <Route path="/admin"               element={<Admin />} />
         <Route path="/admin/sponsors"      element={<AdminSponsors />} />
         <Route path="/admin/permissions"   element={<AdminPermissions />} />
+        <Route path="/admin/members"       element={<AdminMembers />} />
         <Route path="/sponsor-registration" element={<SponsorRegistration />} />
 
         {/* ── Auth flow routes ── */}
