@@ -139,6 +139,14 @@ const PermissionEditor: React.FC<{
   const [saving,    setSaving]    = useState(false);
   const [err,       setErr]       = useState('');
 
+  // Sync draft whenever currentPerms changes (e.g. after a save + refetch)
+  useEffect(() => {
+    const base = {} as Record<PermKey, boolean>;
+    PERM_KEYS.forEach(k => { base[k] = currentPerms?.[k] ?? false; });
+    setDraft(base);
+    setMakeAdmin(member.role === 'admin' || member.is_super_admin);
+  }, [currentPerms, member.role, member.is_super_admin]);
+
   const handleChange = (key: PermKey, val: boolean) => {
     setDraft(prev => ({ ...prev, [key]: val }));
     // If any perm is turned on, auto-check makeAdmin
@@ -630,6 +638,11 @@ export const AdminPermissions: React.FC = () => {
 
     await fetchData();
     await fetchAudit();
+
+    // Update editMember ref so reopening immediately shows correct state
+    setEditMember(prev =>
+      prev ? { ...prev, role: targetRole, admin_permissions: { ...prev.admin_permissions, ...changes } as any } : null
+    );
   };
 
   // ── Filter ──
@@ -876,7 +889,11 @@ ON CONFLICT (profile_id) DO UPDATE SET perm_full_admin = true;`}
       {editMember && (
         <PermissionEditor
           member={editMember}
-          currentPerms={editMember.admin_permissions ?? null}
+          currentPerms={
+            // Always use the freshest data from the members array, not the
+            // stale snapshot in editMember (which doesn't update after save)
+            members.find(m => m.id === editMember.id)?.admin_permissions ?? null
+          }
           isSuperAdmin={isSuperAdmin}
           onSave={handleSave}
           onClose={() => setEditMember(null)}
