@@ -552,17 +552,17 @@ export const AdminPermissions: React.FC = () => {
       if (result?.error) throw new Error(result.error);
     }
 
-    // 2. Upsert permissions via secure RPC
-    const permsPayload: Record<string, boolean> = {};
+    // 2. Upsert permissions directly (RLS allows super admins to write)
+    const permsPayload: any = {
+      profile_id: memberId,
+      granted_by: user!.id,
+    };
     PERM_KEYS.forEach(k => { permsPayload[k] = changes[k] ?? false; });
 
-    const { data: permResult, error: permErr } = await supabase.rpc('upsert_admin_permissions', {
-      target_id: memberId,
-      perms:     permsPayload,
-    });
+    const { error: permErr } = await supabase
+      .from('admin_permissions')
+      .upsert(permsPayload, { onConflict: 'profile_id' });
     if (permErr) throw new Error('Permission save failed: ' + permErr.message);
-    const pResult = permResult as any;
-    if (pResult?.error) throw new Error(pResult.error);
 
     // 3. Write audit entries via secure RPC
     const auditRows: any[] = [];
@@ -636,15 +636,25 @@ export const AdminPermissions: React.FC = () => {
       }]);
     }
 
+    // Optimistically update local members state so toggles reflect saved
+    // values immediately — before the async refetch completes
+    const freshPerms: any = { profile_id: memberId, granted_by: user!.id };
+    PERM_KEYS.forEach(k => { freshPerms[k] = changes[k] ?? false; });
+
+    setMembers(prev => prev.map(m =>
+      m.id === memberId
+        ? { ...m, role: targetRole, admin_permissions: freshPerms }
+        : m
+    ));
+
     await fetchData();
     await fetchAudit();
 
-    // Update editMember ref so reopening immediately shows correct state
+    // Keep editMember in sync too
     setEditMember(prev =>
-      prev ? { ...prev, role: targetRole, admin_permissions: { ...prev.admin_permissions, ...changes } as any } : null
+      prev ? { ...prev, role: targetRole, admin_permissions: freshPerms } : null
     );
   };
-
   // ── Filter ──
   const filtered = members.filter(m => {
     const q = search.toLowerCase();
