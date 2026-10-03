@@ -756,20 +756,25 @@ export const Admin: React.FC = () => {
             )}
           </section>
 
-          {/* ── Members quick link ── */}
+          {/* ── Quick Links ── */}
           <section className="mt-10">
             <h2 className="text-xl font-black text-tcm-navy mb-4">Quick Links</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer"
-                className="card p-5 flex items-center gap-4 no-underline">
-                <div className="w-10 h-10 rounded-xl bg-tcm-navy/8 border border-tcm-navy/15 flex items-center justify-center flex-shrink-0">
-                  <Shield className="w-5 h-5 text-tcm-navy" />
-                </div>
-                <div>
-                  <p className="font-black text-tcm-navy text-sm">Supabase Dashboard</p>
-                  <p className="text-tcm-gray-mid text-xs">Manage users, data, storage</p>
-                </div>
-              </a>
+
+              {/* Manage Members — perm_view_members or higher */}
+              {(isSuperAdmin || hasPerm(permissions, 'perm_view_members') || hasPerm(permissions, 'perm_edit_members') || hasPerm(permissions, 'perm_manage_members') || hasPerm(permissions, 'perm_full_admin')) && (
+                <Link to="/admin/members" className="card p-5 flex items-center gap-4 no-underline">
+                  <div className="w-10 h-10 rounded-xl bg-tcm-gold/10 border border-tcm-gold/20 flex items-center justify-center flex-shrink-0">
+                    <Users className="w-5 h-5 text-tcm-gold" />
+                  </div>
+                  <div>
+                    <p className="font-black text-tcm-navy text-sm">Manage Members</p>
+                    <p className="text-tcm-gray-mid text-xs">View &amp; edit registered members</p>
+                  </div>
+                </Link>
+              )}
+
+              {/* Sponsor Records — perm_view_sponsors or higher */}
               {(isSuperAdmin || hasPerm(permissions, 'perm_view_sponsors') || hasPerm(permissions, 'perm_manage_sponsors') || hasPerm(permissions, 'perm_full_admin')) && (
                 <Link to="/admin/sponsors" className="card p-5 flex items-center gap-4 no-underline">
                   <div className="w-10 h-10 rounded-xl bg-yellow-50 border border-yellow-200 flex items-center justify-center flex-shrink-0">
@@ -781,26 +786,21 @@ export const Admin: React.FC = () => {
                   </div>
                 </Link>
               )}
-              {(isSuperAdmin || hasPerm(permissions, 'perm_view_members') || hasPerm(permissions, 'perm_manage_members') || hasPerm(permissions, 'perm_full_admin')) && (
-                <Link to="/membership" className="card p-5 flex items-center gap-4 no-underline">
-                  <div className="w-10 h-10 rounded-xl bg-tcm-gold/10 border border-tcm-gold/20 flex items-center justify-center flex-shrink-0">
-                    <Users className="w-5 h-5 text-tcm-gold" />
+
+              {/* Support Page — perm_view_support or higher */}
+              {(isSuperAdmin || hasPerm(permissions, 'perm_view_support') || hasPerm(permissions, 'perm_manage_support') || hasPerm(permissions, 'perm_full_admin')) && (
+                <Link to="/support" className="card p-5 flex items-center gap-4 no-underline">
+                  <div className="w-10 h-10 rounded-xl bg-tcm-orange/10 border border-tcm-orange/20 flex items-center justify-center flex-shrink-0">
+                    <Heart className="w-5 h-5 text-tcm-orange" />
                   </div>
                   <div>
-                    <p className="font-black text-tcm-navy text-sm">Membership Page</p>
-                    <p className="text-tcm-gray-mid text-xs">View registration form</p>
+                    <p className="font-black text-tcm-navy text-sm">Support Page</p>
+                    <p className="text-tcm-gray-mid text-xs">View public support form</p>
                   </div>
                 </Link>
               )}
-              <Link to="/support" className="card p-5 flex items-center gap-4 no-underline">
-                <div className="w-10 h-10 rounded-xl bg-tcm-orange/10 border border-tcm-orange/20 flex items-center justify-center flex-shrink-0">
-                  <Heart className="w-5 h-5 text-tcm-orange" />
-                </div>
-                <div>
-                  <p className="font-black text-tcm-navy text-sm">Support Page</p>
-                  <p className="text-tcm-gray-mid text-xs">View public support form</p>
-                </div>
-              </Link>
+
+              {/* Manage Permissions — super admin or perm_manage_admins only */}
               {(isSuperAdmin || hasPerm(permissions, 'perm_manage_admins') || hasPerm(permissions, 'perm_full_admin')) && (
                 <Link to="/admin/permissions" className="card p-5 flex items-center gap-4 no-underline">
                   <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center flex-shrink-0">
@@ -812,6 +812,7 @@ export const Admin: React.FC = () => {
                   </div>
                 </Link>
               )}
+
             </div>
           </section>
 
