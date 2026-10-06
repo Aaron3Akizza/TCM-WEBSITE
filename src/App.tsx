@@ -19,6 +19,9 @@ import { Admin }              from './pages/Admin';
 import { AdminSponsors }      from './pages/AdminSponsors';
 import { AdminPermissions }   from './pages/AdminPermissions';
 import { AdminMembers }       from './pages/AdminMembers';
+import { AdminSupporters }    from './pages/AdminSupporters';
+import { AdminCharity }       from './pages/AdminCharity';
+import { AdminContactMessages } from './pages/AdminContactMessages';
 import { SponsorRegistration } from './pages/SponsorRegistration';
 import { AuthCallback }       from './pages/AuthCallback';
 import { ResetPassword }      from './pages/ResetPassword';
@@ -47,11 +50,14 @@ function App() {
         <Route path="/sign-in"             element={<SignIn />} />
         <Route path="/sign-up"             element={<SignUp />} />
         <Route path="/profile"             element={<Profile />} />
-        <Route path="/admin"               element={<Admin />} />
-        <Route path="/admin/sponsors"      element={<AdminSponsors />} />
-        <Route path="/admin/permissions"   element={<AdminPermissions />} />
-        <Route path="/admin/members"       element={<AdminMembers />} />
-        <Route path="/sponsor-registration" element={<SponsorRegistration />} />
+        <Route path="/admin"                  element={<Admin />} />
+        <Route path="/admin/sponsors"         element={<AdminSponsors />} />
+        <Route path="/admin/permissions"      element={<AdminPermissions />} />
+        <Route path="/admin/members"          element={<AdminMembers />} />
+        <Route path="/admin/supporters"       element={<AdminSupporters />} />
+        <Route path="/admin/charity"          element={<AdminCharity />} />
+        <Route path="/admin/contact-messages" element={<AdminContactMessages />} />
+        <Route path="/sponsor-registration"   element={<SponsorRegistration />} />
 
         {/* ── Auth flow routes ── */}
         <Route path="/auth/callback"       element={<AuthCallback />} />

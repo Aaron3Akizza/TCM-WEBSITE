@@ -3,15 +3,19 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Navbar }         from '../components/layout/Navbar';
 import { Footer }         from '../components/layout/Footer';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { AdminSidebar }   from '../components/admin/AdminSidebar';
 import { useAuth }        from '../hooks/useAuth';
 import { supabase }       from '../lib/supabase';
 import { hasPerm }        from '../types/database';
+import { isValidEmail }   from '../lib/utils';
+import { exportCsv }      from '../lib/exportCsv';
 import type { MemberPosition, CareerStatus, Gender } from '../types';
 import {
   Shield, Users, Search, RefreshCw,
   ChevronDown, ChevronUp, Mail, Phone, Calendar,
   Loader2, AlertTriangle, X, Edit3, Save, CheckCircle2,
-  User, MapPin, Briefcase, BookOpen, Star,
+  User, MapPin, Briefcase, BookOpen, Star, Plus, Download,
+  Eye, EyeOff,
 } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────
@@ -358,6 +362,138 @@ const MemberRow: React.FC<{
 };
 
 // ═══════════════════════════════════════════════════════════════
+//  Add Member Modal
+// ═══════════════════════════════════════════════════════════════
+const AddMemberModal: React.FC<{
+  onClose:  () => void;
+  onSaved:  () => void;
+}> = ({ onClose, onSaved }) => {
+  const [fullName,   setFullName]   = useState('');
+  const [email,      setEmail]      = useState('');
+  const [password,   setPassword]   = useState('');
+  const [showPwd,    setShowPwd]    = useState(false);
+  const [phone,      setPhone]      = useState('');
+  const [position,   setPosition]   = useState<MemberPosition>('member');
+  const [saving,     setSaving]     = useState(false);
+  const [err,        setErr]        = useState('');
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErr('');
+    if (!fullName.trim())    { setErr('Full name is required.');                    return; }
+    if (!isValidEmail(email)){ setErr('A valid email address is required.');        return; }
+    if (password.length < 8) { setErr('Password must be at least 8 characters.');  return; }
+
+    setSaving(true);
+    try {
+      // Create Supabase auth user
+      const { data, error: authErr } = await supabase.auth.signUp({
+        email:    email.trim().toLowerCase(),
+        password,
+        options: {
+          data: { full_name: fullName.trim(), position },
+        },
+      });
+      if (authErr) throw new Error(authErr.message);
+      if (!data.user) throw new Error('Could not create account. Please try again.');
+
+      // Upsert full profile immediately
+      const { error: profErr } = await supabase.from('profiles').upsert({
+        id:        data.user.id,
+        full_name: fullName.trim(),
+        email:     email.trim().toLowerCase(),
+        phone:     phone.trim() || null,
+        position,
+        role:      'member',
+      }, { onConflict: 'id' });
+      if (profErr) console.warn('[AddMember] profile upsert:', profErr.message);
+
+      onSaved();
+      onClose();
+    } catch (ex: any) {
+      setErr(ex?.message || 'Failed to create member.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
+        <div className="h-1.5 bg-gradient-to-r from-tcm-navy via-tcm-gold to-tcm-orange" />
+        <div className="p-6 md:p-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-black text-tcm-navy">Add New Member</h2>
+            <button type="button" onClick={onClose} className="text-tcm-gray-mid hover:text-tcm-navy transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <form onSubmit={submit} noValidate className="space-y-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-tcm-navy">Full Name <span className="text-tcm-orange">*</span></label>
+              <input value={fullName} onChange={e => setFullName(e.target.value)}
+                placeholder="Member's full name" className="input-field" autoComplete="name" />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-tcm-navy">Email <span className="text-tcm-orange">*</span></label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                  placeholder="email@example.com" className="input-field" autoComplete="email" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-tcm-navy">Phone <span className="text-tcm-gray-mid text-xs font-normal">(optional)</span></label>
+                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+                  placeholder="+256 700 000 000" className="input-field" />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-tcm-navy">Password <span className="text-tcm-orange">*</span></label>
+              <div className="relative">
+                <input type={showPwd ? 'text' : 'password'} value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="At least 8 characters" className="input-field pr-11" autoComplete="new-password" />
+                <button type="button" onClick={() => setShowPwd(v => !v)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-tcm-gray-mid hover:text-tcm-navy transition-colors">
+                  {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-tcm-gray-mid text-xs">The member can change this password after signing in.</p>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-tcm-navy">Ministry Position</label>
+              <select value={position} onChange={e => setPosition(e.target.value as MemberPosition)} className="select-field">
+                {POSITIONS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+            </div>
+
+            {err && (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                <p className="text-red-600 text-sm font-medium">{err}</p>
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <button type="button" onClick={onClose} disabled={saving}
+                className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-full border-2 border-gray-200 text-tcm-gray-dark text-sm font-bold hover:border-gray-300 transition-colors">
+                Cancel
+              </button>
+              <button type="submit" disabled={saving} className="flex-1 btn-primary py-3 justify-center">
+                {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</> : <><Plus className="w-4 h-4" /> Add Member</>}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════
 //  AdminMembers page
 // ═══════════════════════════════════════════════════════════════
 export const AdminMembers: React.FC = () => {
@@ -370,6 +506,7 @@ export const AdminMembers: React.FC = () => {
   const [search,       setSearch]       = useState('');
   const [filterRole,   setFilterRole]   = useState<'all' | 'admin' | 'member'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [showAddModal, setShowAddModal] = useState(false);
 
   // ── Auth + permission guard ──
   const canView = isSuperAdmin ||
@@ -489,7 +626,11 @@ export const AdminMembers: React.FC = () => {
         <div className="h-[3px] bg-gradient-to-r from-transparent via-tcm-gold to-transparent" />
       </header>
 
-      <main className="flex-grow bg-tcm-gray-soft">
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <AdminSidebar permissions={permissions} isSuperAdmin={isSuperAdmin} />
+
+        <main className="flex-1 overflow-y-auto bg-tcm-gray-soft">
         <div className="container-tcm py-10">
 
           {/* Stats */}
@@ -500,7 +641,7 @@ export const AdminMembers: React.FC = () => {
             <StatCard label="Administrators" value={stats.admins}   icon={Shield}        color="bg-purple-50 text-purple-600"   />
           </div>
 
-          {/* Filters */}
+          {/* Filters + actions */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3 flex-wrap">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-tcm-gray-mid pointer-events-none" />
@@ -509,7 +650,6 @@ export const AdminMembers: React.FC = () => {
                 className="input-field pl-10 py-2.5" />
             </div>
 
-            {/* Role filter */}
             <div className="flex rounded-xl border border-gray-200 overflow-hidden flex-shrink-0">
               {(['all', 'member', 'admin'] as const).map(r => (
                 <button key={r} type="button" onClick={() => setFilterRole(r)}
@@ -519,7 +659,6 @@ export const AdminMembers: React.FC = () => {
               ))}
             </div>
 
-            {/* Status filter */}
             <div className="flex rounded-xl border border-gray-200 overflow-hidden flex-shrink-0">
               {(['all', 'active', 'inactive'] as const).map(s => (
                 <button key={s} type="button" onClick={() => setFilterStatus(s)}
@@ -542,12 +681,32 @@ export const AdminMembers: React.FC = () => {
             )}
           </div>
 
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <p className="text-tcm-gray-mid text-sm">
               Showing <strong className="text-tcm-navy">{filtered.length}</strong> of <strong className="text-tcm-navy">{members.length}</strong> members
             </p>
+            <div className="flex items-center gap-2">
+              {/* CSV Export */}
+              <button type="button"
+                onClick={() => exportCsv(filtered.map(m => ({
+                  Name: m.full_name, Email: m.email, Phone: m.phone ?? '',
+                  Username: m.username ?? '', Role: m.role, Position: m.position ?? '',
+                  Gender: m.gender ?? '', 'Career Status': m.career_status ?? '',
+                  Faith: m.faith ?? '', School: m.school ?? '', Address: m.address ?? '',
+                  Active: m.is_active ? 'Yes' : 'No', 'Joined': new Date(m.created_at).toLocaleDateString('en-GB'),
+                })), 'tcm-members')}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 text-tcm-gray-dark text-xs font-bold hover:border-tcm-navy hover:text-tcm-navy transition-colors">
+                <Download className="w-3.5 h-3.5" /> Export CSV
+              </button>
+              {/* Add Member */}
+              {canEdit && (
+                <button type="button" onClick={() => setShowAddModal(true)}
+                  className="btn-primary px-5 py-2 text-xs">
+                  <Plus className="w-3.5 h-3.5" /> Add Member
+                </button>
+              )}
+            </div>
           </div>
-
           {/* Error */}
           {fetchErr && (
             <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl px-5 py-4 mb-5">
@@ -582,8 +741,17 @@ export const AdminMembers: React.FC = () => {
           )}
 
         </div>
-      </main>
+        </main>
+      </div>
       <Footer />
+
+      {/* Add Member Modal */}
+      {showAddModal && (
+        <AddMemberModal
+          onClose={() => setShowAddModal(false)}
+          onSaved={fetchMembers}
+        />
+      )}
     </div>
   );
 };
