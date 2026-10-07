@@ -32,11 +32,11 @@ CREATE INDEX IF NOT EXISTS idx_charity_programs_category ON charity_programs(cat
 
 ALTER TABLE charity_programs ENABLE ROW LEVEL SECURITY;
 
--- Public can view active/completed programs (for the public charity page)
+-- Public can view active, planned and completed programs (for the public charity page)
 DROP POLICY IF EXISTS "public_view_charity" ON charity_programs;
 CREATE POLICY "public_view_charity"
   ON charity_programs FOR SELECT
-  USING (status IN ('active', 'completed'));
+  USING (status IN ('active', 'planned', 'completed'));
 
 -- Admins can do everything
 DROP POLICY IF EXISTS "admins_manage_charity" ON charity_programs;

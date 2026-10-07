@@ -12,6 +12,7 @@ import { GetInvolved }        from './pages/GetInvolved';
 import { Membership }         from './pages/Membership';
 import { Support }            from './pages/Support';
 import { Contact }            from './pages/Contact';
+import { Charity }            from './pages/Charity';
 import { SignIn }             from './pages/SignIn';
 import { SignUp }             from './pages/SignUp';
 import { Profile }            from './pages/Profile';
@@ -45,6 +46,7 @@ function App() {
         <Route path="/membership"          element={<Membership />} />
         <Route path="/support"             element={<Support />} />
         <Route path="/contact"             element={<Contact />} />
+        <Route path="/charity"             element={<Charity />} />
 
         {/* ── Auth ── */}
         <Route path="/sign-in"             element={<SignIn />} />

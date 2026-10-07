@@ -12,6 +12,7 @@ import {
   Save, LogOut,
   Edit3, X, CheckCircle2, Loader2, Lock, Eye, EyeOff,
   UserCircle2, KeyRound, AlertTriangle, Bell, ArrowRight,
+  LayoutDashboard, Heart, Gift, Clock, MapPin,
 } from 'lucide-react';
 import type { MemberPosition, CareerStatus, Gender } from '../types';
 
@@ -96,7 +97,22 @@ const ErrorBanner: React.FC<{ message: string }> = ({ message }) => (
 );
 
 // ── Tab definitions ───────────────────────────────────────────
-type Tab = 'profile' | 'security';
+type Tab = 'dashboard' | 'profile' | 'security';
+
+// ── Charity program type for member dashboard ─────────────────
+interface CharityProgram {
+  id: string; title: string; description: string | null;
+  category: string; status: string;
+  start_date: string | null; end_date: string | null;
+  location: string | null; target_amount: string | null;
+}
+
+// ── Member support record ─────────────────────────────────────
+interface MySupportRecord {
+  id: string; support_type: string; department: string | null;
+  project: string | null; amount: string | null; amount_sent: string | null;
+  verification_status: string; start_date: string; created_at: string;
+}
 
 // ═══════════════════════════════════════════════════════════════
 //  Main Profile component
@@ -106,7 +122,12 @@ export const Profile: React.FC = () => {
   const { user, profile, loading, signOut } = useAuth();
 
   // ── Active tab ──
-  const [activeTab, setActiveTab] = useState<Tab>('profile');
+  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+
+  // ── Dashboard data ──
+  const [charityPrograms,   setCharityPrograms]   = useState<CharityProgram[]>([]);
+  const [mySupportRecords,  setMySupportRecords]  = useState<MySupportRecord[]>([]);
+  const [dashboardLoading,  setDashboardLoading]  = useState(false);
 
   // ── Admin notification banner ──
   const [notification,    setNotification]    = useState<{ id: string; title: string; body: string; type: string } | null>(null);
@@ -170,6 +191,32 @@ export const Profile: React.FC = () => {
       .then(({ data }) => {
         if (data) setNotification(data as any);
       });
+  }, [user]);
+
+  // ── Fetch dashboard data ──
+  useEffect(() => {
+    if (!user) return;
+    setDashboardLoading(true);
+    Promise.all([
+      // Active/upcoming charity programs
+      supabase
+        .from('charity_programs')
+        .select('id,title,description,category,status,start_date,end_date,location,target_amount')
+        .in('status', ['active', 'planned'])
+        .order('start_date', { ascending: true })
+        .limit(6),
+      // Member's own support records (linked via sponsors.profile_id)
+      supabase
+        .from('sponsorship_records')
+        .select('id,support_type,department,project,amount,amount_sent,verification_status,start_date,created_at,sponsors!inner(profile_id)')
+        .eq('sponsors.profile_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10),
+    ]).then(([charityRes, supportRes]) => {
+      setCharityPrograms((charityRes.data ?? []) as CharityProgram[]);
+      setMySupportRecords((supportRes.data ?? []) as MySupportRecord[]);
+      setDashboardLoading(false);
+    });
   }, [user]);
 
   // ── Populate edit fields when profile loads ──
@@ -434,8 +481,9 @@ export const Profile: React.FC = () => {
 
               {/* Tab navigation */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex flex-row lg:flex-col gap-1">
-                <TabBtn tab="profile"  icon={UserCircle2} label="My Profile" />
-                <TabBtn tab="security" icon={KeyRound}    label="Security"   />
+                <TabBtn tab="dashboard" icon={LayoutDashboard} label="My Dashboard" />
+                <TabBtn tab="profile"   icon={UserCircle2}     label="My Profile"   />
+                <TabBtn tab="security"  icon={KeyRound}        label="Security"     />
               </div>
 
               {/* Scripture card */}
@@ -534,6 +582,202 @@ export const Profile: React.FC = () => {
 
               {/* Global save success banner (persists across tab opens) */}
               {saveOk && <SuccessBanner message={saveOk} />}
+
+              {/* ════════════════════════════════════════
+                  DASHBOARD TAB
+              ════════════════════════════════════════ */}
+              {activeTab === 'dashboard' && (
+                <div className="flex flex-col gap-6">
+
+                  {/* Welcome card */}
+                  <div className="bg-navy-gradient rounded-2xl p-6 border border-tcm-gold/20 relative overflow-hidden">
+                    <div className="absolute inset-0 dot-grid" />
+                    <div className="relative z-10">
+                      <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">Welcome back</p>
+                      <h2 className="text-2xl font-black text-white tracking-tight mb-1">
+                        {profile?.full_name || 'Member'}
+                      </h2>
+                      <p className="text-white/55 text-sm mb-4">
+                        You are a member of Transform Christian Ministries.
+                        Support a charity program below or view your giving history.
+                      </p>
+                      <div className="flex flex-wrap gap-3">
+                        <Link to="/charity"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-tcm-gold text-tcm-navy text-xs font-black hover:bg-tcm-gold-lt transition-colors shadow-gold">
+                          <Gift className="w-3.5 h-3.5" /> View Charity Programs
+                        </Link>
+                        <Link to="/sponsor-registration"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/30 text-white text-xs font-semibold hover:border-tcm-gold hover:text-tcm-gold transition-colors">
+                          <Heart className="w-3.5 h-3.5" /> Support Ministry
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Charity Programs section */}
+                  <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                      <div>
+                        <h3 className="font-black text-tcm-navy flex items-center gap-2">
+                          <Gift className="w-4 h-4 text-tcm-gold" />
+                          Charity Programs
+                        </h3>
+                        <p className="text-tcm-gray-mid text-xs mt-0.5">Active and upcoming programs you can support</p>
+                      </div>
+                      <Link to="/charity" className="text-xs font-bold text-tcm-orange hover:underline">
+                        View all →
+                      </Link>
+                    </div>
+
+                    {dashboardLoading ? (
+                      <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 text-tcm-gold animate-spin" /></div>
+                    ) : charityPrograms.length === 0 ? (
+                      <div className="px-6 py-8 text-center">
+                        <Gift className="w-10 h-10 text-tcm-gray-mid mx-auto mb-2" />
+                        <p className="text-tcm-gray-mid text-sm">No active programs right now. Check back soon.</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-gray-50">
+                        {charityPrograms.map(p => (
+                          <div key={p.id} className="px-6 py-4 flex items-start gap-4">
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${p.status === 'active' ? 'bg-green-50 border border-green-200' : 'bg-blue-50 border border-blue-200'}`}>
+                              {p.status === 'active'
+                                ? <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                : <Clock className="w-4 h-4 text-blue-500" />
+                              }
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-black text-tcm-navy text-sm">{p.title}</p>
+                              {p.description && (
+                                <p className="text-tcm-gray-mid text-xs leading-relaxed mt-0.5 line-clamp-2">{p.description}</p>
+                              )}
+                              <div className="flex flex-wrap gap-3 mt-1.5">
+                                {p.location && (
+                                  <span className="inline-flex items-center gap-1 text-tcm-gray-mid text-[11px]">
+                                    <MapPin className="w-3 h-3" />{p.location}
+                                  </span>
+                                )}
+                                {p.start_date && (
+                                  <span className="inline-flex items-center gap-1 text-tcm-gray-mid text-[11px]">
+                                    <Calendar className="w-3 h-3" />
+                                    {new Date(p.start_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <Link
+                              to={`/sponsor-registration?type=project&project=${encodeURIComponent(p.title)}&desc=${encodeURIComponent(p.description ?? '')}`}
+                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-tcm-gold/10 border border-tcm-gold/30 text-tcm-gold text-xs font-bold hover:bg-tcm-gold/20 transition-colors flex-shrink-0"
+                            >
+                              <Heart className="w-3 h-3" /> Support
+                            </Link>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+
+                  {/* My Support History */}
+                  <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100">
+                      <h3 className="font-black text-tcm-navy flex items-center gap-2">
+                        <Heart className="w-4 h-4 text-tcm-orange" />
+                        My Support History
+                      </h3>
+                      <p className="text-tcm-gray-mid text-xs mt-0.5">Your contributions to TCM</p>
+                    </div>
+
+                    {dashboardLoading ? (
+                      <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 text-tcm-gold animate-spin" /></div>
+                    ) : mySupportRecords.length === 0 ? (
+                      <div className="px-6 py-8 text-center">
+                        <Heart className="w-10 h-10 text-tcm-gray-mid mx-auto mb-2" />
+                        <p className="text-tcm-gray-mid text-sm mb-3">You haven't supported any programs yet.</p>
+                        <Link to="/charity"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-tcm-gold text-tcm-navy text-xs font-black hover:bg-tcm-gold-lt transition-colors">
+                          <Gift className="w-3.5 h-3.5" /> Explore Charity Programs
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-gray-50">
+                        {mySupportRecords.map(r => {
+                          const statusColor =
+                            r.verification_status === 'current'              ? 'text-green-600 bg-green-50 border-green-200' :
+                            r.verification_status === 'pending_verification' ? 'text-amber-600 bg-amber-50 border-amber-200' :
+                            r.verification_status === 'former'               ? 'text-gray-500 bg-gray-100 border-gray-200'   :
+                            'text-red-500 bg-red-50 border-red-200';
+                          const statusLabel =
+                            r.verification_status === 'current'              ? 'Verified'  :
+                            r.verification_status === 'pending_verification' ? 'Pending'   :
+                            r.verification_status === 'former'               ? 'Former'    : 'Unverified';
+                          const typeLabel = {
+                            general: 'General Ministry', department: 'Ministry Dept',
+                            project: 'Project', merchandise: 'Merchandise', other: 'Other',
+                          }[r.support_type] ?? r.support_type;
+
+                          return (
+                            <div key={r.id} className="px-6 py-4 flex items-start gap-4">
+                              <div className="w-9 h-9 rounded-xl bg-tcm-orange/10 border border-tcm-orange/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <Heart className="w-4 h-4 text-tcm-orange" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="font-black text-tcm-navy text-sm">{typeLabel}</p>
+                                  {r.project && <p className="text-tcm-gray-mid text-xs">· {r.project}</p>}
+                                  {r.department && <p className="text-tcm-gray-mid text-xs">· {r.department}</p>}
+                                </div>
+                                <div className="flex items-center gap-3 mt-1 flex-wrap">
+                                  {(r.amount_sent || r.amount) && (
+                                    <span className="text-xs font-bold text-tcm-navy">{r.amount_sent || r.amount}</span>
+                                  )}
+                                  <span className="text-tcm-gray-mid text-xs">
+                                    {new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                  </span>
+                                </div>
+                              </div>
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full border text-[11px] font-bold flex-shrink-0 ${statusColor}`}>
+                                {statusLabel}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </section>
+
+                  {/* Quick action links */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <Link to="/charity" className="card p-5 flex items-center gap-3 no-underline">
+                      <div className="w-10 h-10 rounded-xl bg-green-50 border border-green-200 flex items-center justify-center flex-shrink-0">
+                        <Gift className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-black text-tcm-navy text-sm">Charity Programs</p>
+                        <p className="text-tcm-gray-mid text-xs">Support an initiative</p>
+                      </div>
+                    </Link>
+                    <Link to="/events" className="card p-5 flex items-center gap-3 no-underline">
+                      <div className="w-10 h-10 rounded-xl bg-tcm-gold/10 border border-tcm-gold/20 flex items-center justify-center flex-shrink-0">
+                        <Calendar className="w-5 h-5 text-tcm-gold" />
+                      </div>
+                      <div>
+                        <p className="font-black text-tcm-navy text-sm">Upcoming Events</p>
+                        <p className="text-tcm-gray-mid text-xs">See what's happening</p>
+                      </div>
+                    </Link>
+                    <Link to="/sponsor-registration" className="card p-5 flex items-center gap-3 no-underline">
+                      <div className="w-10 h-10 rounded-xl bg-tcm-orange/10 border border-tcm-orange/20 flex items-center justify-center flex-shrink-0">
+                        <Heart className="w-5 h-5 text-tcm-orange" />
+                      </div>
+                      <div>
+                        <p className="font-black text-tcm-navy text-sm">Support Ministry</p>
+                        <p className="text-tcm-gray-mid text-xs">Become a sponsor</p>
+                      </div>
+                    </Link>
+                  </div>
+
+                </div>
+              )}
 
               {/* ════════════════════════════════════════
                   MY PROFILE TAB
