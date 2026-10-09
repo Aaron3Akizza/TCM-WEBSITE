@@ -163,6 +163,11 @@ export const SponsorRegistration: React.FC = () => {
   const [phone,          setPhone]          = useState('');
   const [photoFile,      setPhotoFile]      = useState<File | null>(null);
   const [photoPreview,   setPhotoPreview]   = useState<string | null>(null);
+  // Optional account creation
+  const [createAccount,  setCreateAccount]  = useState(false);
+  const [password,       setPassword]       = useState('');
+  const [confirmPwd,     setConfirmPwd]     = useState('');
+  const [showPwd,        setShowPwd]        = useState(false);
 
   // ── Submission ──
   const [submitting,   setSubmitting]   = useState(false);
@@ -202,6 +207,10 @@ export const SponsorRegistration: React.FC = () => {
     if (!isValidEmail(email)) { e.email = 'A valid email address is required.'; }
     if (!transactionRef.trim()) { e.transactionRef = 'Please enter your transaction or reference number.'; }
     if (!amountSent.trim()) { e.amountSent = 'Please enter the amount you sent.'; }
+    if (createAccount) {
+      if (password.length < 8) { e.password = 'Password must be at least 8 characters.'; }
+      if (password !== confirmPwd) { e.confirmPwd = 'Passwords do not match.'; }
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -251,19 +260,43 @@ export const SponsorRegistration: React.FC = () => {
       const { data: sponsorData, error: sponsorErr } = await supabase
         .from('sponsors')
         .insert([{
-          full_name:    fullName.trim(),
-          email:        email.trim().toLowerCase() || null,
-          phone:        phone.trim() || null,
-          avatar_url:   avatarUrl,
-          sponsor_type: supportType as SponsorType,
-          is_active:    false,  // becomes true when admin verifies
-          notes:        null,
+          full_name:      fullName.trim(),
+          email:          email.trim().toLowerCase() || null,
+          phone:          phone.trim() || null,
+          avatar_url:     avatarUrl,
+          sponsor_type:   supportType as SponsorType,
+          is_active:      false,  // becomes true when admin verifies
+          sponsor_status: 'pending',
+          notes:          null,
         }])
         .select()
         .single();
 
       if (sponsorErr) throw new Error(sponsorErr.message);
       const sponsorId = sponsorData.id;
+
+      // 2b. Optionally create a Supabase auth account so the sponsor can log in
+      if (createAccount && password) {
+        const { data: authData, error: authErr } = await supabase.auth.signUp({
+          email:    email.trim().toLowerCase(),
+          password,
+          options: {
+            data: { full_name: fullName.trim() },
+          },
+        });
+        if (!authErr && authData.user) {
+          // Link the sponsor record to the new auth account
+          await supabase.from('sponsors').update({ profile_id: authData.user.id }).eq('id', sponsorId);
+          // Also create a profiles row so they can use the member dashboard
+          await supabase.from('profiles').upsert({
+            id:        authData.user.id,
+            full_name: fullName.trim(),
+            email:     email.trim().toLowerCase(),
+            phone:     phone.trim() || null,
+            role:      'member',
+          }, { onConflict: 'id' });
+        }
+      }
 
       // 3. Create sponsorship record (pending verification)
       const { data: recData, error: recErr } = await supabase
@@ -736,8 +769,68 @@ export const SponsorRegistration: React.FC = () => {
                       <p className="text-tcm-gray-dark text-xs leading-relaxed">
                         Your personal information and transaction details are stored securely and only
                         accessible to authorized TCM administrators for verification purposes.
-      They will never be shared publicly.
+                        They will never be shared publicly.
                       </p>
+                    </div>
+
+                    {/* ── Optional account creation ── */}
+                    <div className={`rounded-2xl border-2 p-5 transition-all ${createAccount ? 'border-tcm-gold bg-tcm-gold/5' : 'border-gray-200 bg-white'}`}>
+                      <div className="flex items-start justify-between gap-3 mb-1">
+                        <div>
+                          <p className="font-black text-tcm-navy text-sm">Create a sponsor account</p>
+                          <p className="text-tcm-gray-mid text-xs mt-0.5">
+                            Optional — lets you log in and track your sponsorship progress and history.
+                          </p>
+                        </div>
+                        <button type="button" onClick={() => setCreateAccount(v => !v)}
+                          className={`relative w-11 h-6 rounded-full transition-all flex-shrink-0 ${createAccount ? 'bg-tcm-gold' : 'bg-gray-300'}`}
+                          role="switch" aria-checked={createAccount}>
+                          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${createAccount ? 'translate-x-5' : 'translate-x-0'}`} />
+                        </button>
+                      </div>
+
+                      {createAccount && (
+                        <div className="mt-4 space-y-4 pt-4 border-t border-tcm-gold/20">
+                          <p className="text-tcm-gray-mid text-xs">
+                            Your email address (<strong className="text-tcm-navy">{email || 'entered above'}</strong>) will be used to sign in.
+                            Once your sponsorship is verified by an admin, you can log in to view your records.
+                          </p>
+                          <Field label="Password" hint="at least 8 characters" error={errors.password}>
+                            <div className="relative">
+                              <input
+                                type={showPwd ? 'text' : 'password'}
+                                value={password}
+                                onChange={e => { setPassword(e.target.value); setErrors(v => ({ ...v, password: '' })); }}
+                                placeholder="Create a password"
+                                className={`input-field pr-11 ${errors.password ? 'input-field-error' : ''}`}
+                                autoComplete="new-password"
+                              />
+                              <button type="button" onClick={() => setShowPwd(v => !v)}
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-tcm-gray-mid hover:text-tcm-navy transition-colors">
+                                {showPwd
+                                  ? <ArrowLeft className="w-4 h-4 rotate-90" />
+                                  : <ArrowRight className="w-4 h-4 rotate-90" />
+                                }
+                              </button>
+                            </div>
+                          </Field>
+                          <Field label="Confirm Password" error={errors.confirmPwd}>
+                            <input
+                              type={showPwd ? 'text' : 'password'}
+                              value={confirmPwd}
+                              onChange={e => { setConfirmPwd(e.target.value); setErrors(v => ({ ...v, confirmPwd: '' })); }}
+                              placeholder="Repeat your password"
+                              className={`input-field ${errors.confirmPwd ? 'input-field-error' : ''}`}
+                              autoComplete="new-password"
+                            />
+                          </Field>
+                          {password.length >= 8 && confirmPwd === password && (
+                            <p className="text-green-600 text-xs font-semibold flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Passwords match
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {submitErr && (
@@ -775,6 +868,15 @@ export const SponsorRegistration: React.FC = () => {
                       <span className="font-bold text-amber-600">Pending Verification</span>.
                       The TCM administration will verify your support and update your sponsorship status.
                     </p>
+                    {createAccount && (
+                      <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4 text-left max-w-sm mx-auto">
+                        <p className="text-green-700 text-sm font-bold mb-1">✓ Account created</p>
+                        <p className="text-green-700 text-xs leading-relaxed">
+                          You can sign in with <strong>{email}</strong> once your sponsorship is verified.
+                          Go to <Link to="/sign-in" className="underline font-bold">Sign In</Link> to access your sponsor dashboard.
+                        </p>
+                      </div>
+                    )}
 
                     {/* Reference number */}
                     <div className="bg-tcm-gray-soft rounded-2xl p-5 mb-6 max-w-sm mx-auto">

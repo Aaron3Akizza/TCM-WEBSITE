@@ -16,25 +16,24 @@ import {
   Edit3, History, UserCheck, UserMinus,
   ArrowRight, Save, Clock,
 } from 'lucide-react';
-
 // ── Types ─────────────────────────────────────────────────────
 type SponsorType   = 'general' | 'department' | 'project' | 'merchandise' | 'other';
 type RecordStatus  = 'current' | 'former';
 type Frequency     = 'one_time' | 'monthly' | 'quarterly' | 'annual' | 'other';
 
 interface Sponsor {
-  id:           string;
-  full_name:    string;
-  email:        string | null;
-  phone:        string | null;
-  avatar_url:   string | null;
-  profile_id:   string | null;
-  sponsor_type: SponsorType;
-  is_active:    boolean;
-  notes:        string | null;
-  created_at:   string;
-  updated_at:   string;
-  // joined via query
+  id:             string;
+  full_name:      string;
+  email:          string | null;
+  phone:          string | null;
+  avatar_url:     string | null;
+  profile_id:     string | null;
+  sponsor_type:   SponsorType;
+  is_active:      boolean;
+  sponsor_status: string;
+  notes:          string | null;
+  created_at:     string;
+  updated_at:     string;
   sponsorship_records?: SponsorshipRecord[];
 }
 
@@ -110,14 +109,21 @@ const StatCard: React.FC<{ label: string; value: number; icon: React.ElementType
   </div>
 );
 
-const SponsorBadge: React.FC<{ active: boolean }> = ({ active }) => (
-  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold ${
-    active ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-500'
-  }`}>
-    {active ? <UserCheck className="w-3 h-3" /> : <UserMinus className="w-3 h-3" />}
-    {active ? 'Current' : 'Former'}
-  </span>
-);
+const SponsorBadge: React.FC<{ active: boolean; status?: string }> = ({ active, status }) => {
+  const displayStatus = status ?? (active ? 'current' : 'former');
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold ${
+      displayStatus === 'current' ? 'bg-green-50 border-green-200 text-green-700' :
+      displayStatus === 'pending' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+      'bg-gray-50 border-gray-200 text-gray-500'
+    }`}>
+      {displayStatus === 'current' ? <UserCheck className="w-3 h-3" /> :
+       displayStatus === 'pending' ? <Clock className="w-3 h-3" /> :
+       <UserMinus className="w-3 h-3" />}
+      {displayStatus === 'current' ? 'Current' : displayStatus === 'pending' ? 'Pending' : 'Former'}
+    </span>
+  );
+};
 
 // ── Add / Edit Sponsor Modal ──────────────────────────────────
 interface SponsorFormProps {
@@ -518,7 +524,7 @@ const SponsorRow: React.FC<SponsorRowProps> = ({ sponsor, onEdit, onAddRecord, o
         <p className="text-tcm-gray-mid text-xs hidden sm:block flex-shrink-0">{fmtDate(sponsor.created_at)}</p>
 
         {/* Status */}
-        <div className="flex-shrink-0"><SponsorBadge active={sponsor.is_active} /></div>
+        <div className="flex-shrink-0"><SponsorBadge active={sponsor.is_active} status={sponsor.sponsor_status} /></div>
 
         {/* Expand */}
         <div className="flex-shrink-0 text-tcm-gray-mid">
@@ -670,7 +676,7 @@ export const AdminSponsors: React.FC = () => {
   const [fetching,       setFetching]       = useState(true);
   const [fetchErr,       setFetchErr]       = useState('');
   const [search,         setSearch]         = useState('');
-  const [filterStatus,   setFilterStatus]   = useState<'all' | 'current' | 'former'>('all');
+  const [filterStatus,   setFilterStatus]   = useState<'all' | 'current' | 'former' | 'pending'>('all');
   const [filterType,     setFilterType]     = useState<SponsorType | ''>('');
   const [filterDept,     setFilterDept]     = useState('');
 
@@ -768,7 +774,10 @@ export const AdminSponsors: React.FC = () => {
       .select('status')
       .eq('sponsor_id', rec.sponsor_id);
     const hasActive = (allRecs ?? []).some((r: any) => r.id === recordId ? newStatus === 'current' : r.status === 'current');
-    await supabase.from('sponsors').update({ is_active: hasActive }).eq('id', rec.sponsor_id);
+    await supabase.from('sponsors').update({
+      is_active:      hasActive,
+      sponsor_status: hasActive ? 'current' : 'former',
+    }).eq('id', rec.sponsor_id);
     setStatusChangeRec(null);
     await fetchSponsors();
   };

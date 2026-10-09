@@ -38,6 +38,7 @@ interface MemberProfile {
   school:         string | null;
   address:        string | null;
   is_active:      boolean;
+  member_status:  string;
   created_at:     string;
 }
 
@@ -156,6 +157,7 @@ const MemberRow: React.FC<{
         school:        school.trim() || null,
         address:       address.trim() || null,
         is_active:     isActive,
+        member_status: isActive ? 'current' : 'former',
       });
       setSavedOk(true);
       setEditing(false);
@@ -217,11 +219,13 @@ const MemberRow: React.FC<{
         <span className={`hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border flex-shrink-0 ${
           member.is_super_admin ? 'bg-purple-100 border-purple-300 text-purple-700' :
           member.role === 'admin' ? 'bg-tcm-gold/15 border-tcm-gold/40 text-tcm-navy' :
-          'bg-gray-100 border-gray-200 text-gray-600'
+          member.is_active ? 'bg-green-50 border-green-200 text-green-700' :
+          'bg-gray-100 border-gray-200 text-gray-500'
         }`}>
           {member.is_super_admin ? <><Star className="w-2.5 h-2.5" />Super Admin</> :
            member.role === 'admin' ? <><Shield className="w-2.5 h-2.5" />Admin</> :
-           <><Users className="w-2.5 h-2.5" />Member</>}
+           member.is_active ? <><Users className="w-2.5 h-2.5" />Current</> :
+           <><Users className="w-2.5 h-2.5" />Former</>}
         </span>
 
         {/* Date */}
@@ -330,17 +334,22 @@ const MemberRow: React.FC<{
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-tcm-navy placeholder-tcm-gray-mid text-sm resize-none focus:outline-none focus:border-tcm-gold transition-colors" />
               </Field>
 
-              {/* Active status toggle */}
+              {/* Active / Former status toggle */}
               <div className="flex items-center justify-between bg-tcm-gray-soft rounded-xl px-4 py-3">
                 <div>
-                  <p className="text-sm font-bold text-tcm-navy">Member Active</p>
-                  <p className="text-tcm-gray-mid text-xs">Inactive members cannot sign in</p>
+                  <p className="text-sm font-bold text-tcm-navy">Member Status</p>
+                  <p className="text-tcm-gray-mid text-xs">{isActive ? 'Current member — active in the ministry' : 'Former member — no longer active'}</p>
                 </div>
-                <button type="button" onClick={() => setIsActive(v => !v)}
-                  className={`relative w-11 h-6 rounded-full transition-all ${isActive ? 'bg-green-500' : 'bg-gray-300'}`}
-                  role="switch" aria-checked={isActive}>
-                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isActive ? 'translate-x-5' : 'translate-x-0'}`} />
-                </button>
+                <div className="flex items-center gap-3">
+                  <span className={`text-xs font-bold ${isActive ? 'text-green-600' : 'text-gray-500'}`}>
+                    {isActive ? 'Current' : 'Former'}
+                  </span>
+                  <button type="button" onClick={() => setIsActive(v => !v)}
+                    className={`relative w-11 h-6 rounded-full transition-all ${isActive ? 'bg-green-500' : 'bg-gray-300'}`}
+                    role="switch" aria-checked={isActive}>
+                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isActive ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center gap-3">
@@ -635,10 +644,10 @@ export const AdminMembers: React.FC = () => {
 
           {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
-            <StatCard label="Total Members"  value={stats.total}    icon={Users}         color="bg-tcm-navy/8 text-tcm-navy"    />
-            <StatCard label="Active"         value={stats.active}   icon={CheckCircle2}  color="bg-green-50 text-green-600"     />
-            <StatCard label="Inactive"       value={stats.inactive} icon={AlertTriangle} color="bg-red-50 text-red-500"         />
-            <StatCard label="Administrators" value={stats.admins}   icon={Shield}        color="bg-purple-50 text-purple-600"   />
+            <StatCard label="Total Members"   value={stats.total}    icon={Users}         color="bg-tcm-navy/8 text-tcm-navy"    />
+            <StatCard label="Current Members" value={stats.active}   icon={CheckCircle2}  color="bg-green-50 text-green-600"     />
+            <StatCard label="Former Members"  value={stats.inactive} icon={AlertTriangle} color="bg-gray-100 text-gray-500"      />
+            <StatCard label="Administrators"  value={stats.admins}   icon={Shield}        color="bg-purple-50 text-purple-600"   />
           </div>
 
           {/* Filters + actions */}
@@ -663,7 +672,7 @@ export const AdminMembers: React.FC = () => {
               {(['all', 'active', 'inactive'] as const).map(s => (
                 <button key={s} type="button" onClick={() => setFilterStatus(s)}
                   className={`px-4 py-2.5 text-xs font-bold capitalize transition-colors ${filterStatus === s ? 'bg-tcm-navy text-white' : 'text-tcm-gray-dark hover:bg-tcm-gray-soft'}`}>
-                  {s === 'all' ? 'All Status' : s}
+                  {s === 'all' ? 'All Status' : s === 'active' ? 'Current' : 'Former'}
                 </button>
               ))}
             </div>

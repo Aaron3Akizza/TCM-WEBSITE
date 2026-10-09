@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import {
@@ -6,7 +7,7 @@ import {
   Send, Loader2, AlertTriangle, ChevronRight,
   Music, Radio, Users, Baby, Globe, BookOpen,
   Megaphone, Target, Cpu, Settings, HelpCircle,
-  ShoppingBag,
+  ShoppingBag, Gift, MapPin, Calendar, Clock,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { isValidEmail } from '../lib/utils';
@@ -39,7 +40,23 @@ export const MERCH_ITEMS = [
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const;
 
-type SupportType = 'ministry_department' | 'merchandise' | 'general' | 'other';
+type SupportType = 'ministry_department' | 'merchandise' | 'general' | 'charity' | 'other';
+
+// ── Charity program type ──────────────────────────────────────
+interface CharityProgram {
+  id: string; title: string; description: string | null;
+  category: string; status: string;
+  start_date: string | null; end_date: string | null;
+  location: string | null; target_amount: string | null;
+  amount_raised: string | null;
+}
+
+const CHARITY_CATEGORY_LABELS: Record<string, string> = {
+  seed_project: 'Seed Project', outreach: 'Outreach',
+  community: 'Community', equipment: 'Equipment',
+  conference: 'Conference', education: 'Education',
+  medical: 'Medical', other: 'Other',
+};
 
 // ── Reusable helpers ─────────────────────────────────────────
 const CopyButton: React.FC<{ text: string }> = ({ text }) => {
@@ -127,6 +144,25 @@ export const Support: React.FC = () => {
   const [otherDetails,  setOtherDetails]  = useState('');
   const [message,       setMessage]       = useState('');
 
+  // ── Charity programs ──
+  const [charityPrograms,    setCharityPrograms]    = useState<CharityProgram[]>([]);
+  const [loadingCharity,     setLoadingCharity]     = useState(false);
+
+  useEffect(() => {
+    if (supportType !== 'charity') return;
+    setLoadingCharity(true);
+    supabase
+      .from('charity_programs')
+      .select('id,title,description,category,status,start_date,end_date,location,target_amount,amount_raised')
+      .in('status', ['active', 'planned'])
+      .order('status')
+      .order('start_date', { ascending: true })
+      .then(({ data }) => {
+        setCharityPrograms((data ?? []) as CharityProgram[]);
+        setLoadingCharity(false);
+      });
+  }, [supportType]);
+
   const [loading,  setLoading]  = useState(false);
   const [success,  setSuccess]  = useState(false);
   const [error,    setError]    = useState('');
@@ -146,6 +182,7 @@ export const Support: React.FC = () => {
                                e.merchItem   = 'Please select a merchandise item.';
     if (supportType === 'other' && !otherDetails.trim())
                                e.otherDetails= 'Please describe what you would like to support.';
+    // charity redirects to sponsor registration — no DB insert needed
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -190,7 +227,6 @@ export const Support: React.FC = () => {
     setOtherDetails(''); setMessage(''); setSuccess(false); setError('');
     setErrors({});
   };
-
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -359,6 +395,14 @@ export const Support: React.FC = () => {
                           onClick={() => { setSupportType('general'); setErrors(v => ({ ...v, supportType: '' })); }}
                         />
                         <TypeCard
+                          value="charity"
+                          label="Charity Program"
+                          desc="Support a specific charity initiative"
+                          icon={Gift}
+                          selected={supportType === 'charity'}
+                          onClick={() => { setSupportType('charity'); setErrors(v => ({ ...v, supportType: '' })); }}
+                        />
+                        <TypeCard
                           value="other"
                           label="Other"
                           desc="Something else you'd like to support"
@@ -502,8 +546,81 @@ export const Support: React.FC = () => {
                       </div>
                     )}
 
-                    {/* ── Contact + details (always shown once type is selected) ── */}
-                    {supportType && (
+                    {/* ── Charity: program selection ── */}
+                    {supportType === 'charity' && (
+                      <div className="mb-8">
+                        <p className="text-xs font-black text-tcm-gray-mid uppercase tracking-widest mb-4">
+                          Step 2 — Choose a Charity Program
+                        </p>
+                        {loadingCharity ? (
+                          <div className="flex justify-center py-6">
+                            <Loader2 className="w-6 h-6 text-tcm-gold animate-spin" />
+                          </div>
+                        ) : charityPrograms.length === 0 ? (
+                          <div className="bg-tcm-gray-soft rounded-2xl p-6 text-center">
+                            <Gift className="w-10 h-10 text-tcm-gray-mid mx-auto mb-2" />
+                            <p className="text-tcm-gray-mid text-sm">No active charity programs at the moment.</p>
+                            <p className="text-tcm-gray-mid text-xs mt-1">You can still support us generally below.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {charityPrograms.map(p => (
+                              <Link
+                                key={p.id}
+                                to={`/sponsor-registration?type=project&project=${encodeURIComponent(p.title)}&desc=${encodeURIComponent(p.description ?? '')}`}
+                                className="flex items-start gap-4 p-4 rounded-2xl border-2 border-gray-200 bg-white hover:border-tcm-gold hover:bg-tcm-gold/5 transition-all group no-underline"
+                              >
+                                <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${p.status === 'active' ? 'bg-green-50 border border-green-200' : 'bg-blue-50 border border-blue-200'}`}>
+                                  {p.status === 'active'
+                                    ? <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                    : <Clock className="w-5 h-5 text-blue-500" />
+                                  }
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <p className="font-black text-tcm-navy text-sm group-hover:text-tcm-gold transition-colors">{p.title}</p>
+                                    <span className="text-[11px] font-bold text-tcm-gray-mid bg-tcm-gray-soft px-2 py-0.5 rounded-full">
+                                      {CHARITY_CATEGORY_LABELS[p.category] ?? p.category}
+                                    </span>
+                                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${p.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-600'}`}>
+                                      {p.status === 'active' ? 'Active' : 'Upcoming'}
+                                    </span>
+                                  </div>
+                                  {p.description && (
+                                    <p className="text-tcm-gray-mid text-xs leading-relaxed mt-1 line-clamp-2">{p.description}</p>
+                                  )}
+                                  <div className="flex flex-wrap gap-3 mt-1.5">
+                                    {p.location && (
+                                      <span className="inline-flex items-center gap-1 text-tcm-gray-mid text-[11px]">
+                                        <MapPin className="w-3 h-3" />{p.location}
+                                      </span>
+                                    )}
+                                    {p.start_date && (
+                                      <span className="inline-flex items-center gap-1 text-tcm-gray-mid text-[11px]">
+                                        <Calendar className="w-3 h-3" />
+                                        {new Date(p.start_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                      </span>
+                                    )}
+                                    {p.target_amount && (
+                                      <span className="inline-flex items-center gap-1 text-tcm-gray-mid text-[11px]">
+                                        Target: <strong className="text-tcm-navy">{p.target_amount}</strong>
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-tcm-gold flex-shrink-0 mt-1 transition-colors" />
+                              </Link>
+                            ))}
+                            <p className="text-tcm-gray-mid text-xs text-center pt-2">
+                              Clicking a program takes you to the full sponsor registration to complete your support.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ── Contact + details (shown for all types except charity) ── */}
+                    {supportType && supportType !== 'charity' && (
                       <div className="space-y-5">
                         <div className="h-px bg-gray-100" />
                         <p className="text-xs font-black text-tcm-gray-mid uppercase tracking-widest">
@@ -511,7 +628,6 @@ export const Support: React.FC = () => {
                             ? 'Step 3 — Your Details'
                             : 'Step 2 — Your Details'}
                         </p>
-
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                           <Field label="Your Name" required>
                             <input
