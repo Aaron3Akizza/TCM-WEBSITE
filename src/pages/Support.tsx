@@ -557,10 +557,23 @@ export const Support: React.FC = () => {
                             <Loader2 className="w-6 h-6 text-tcm-gold animate-spin" />
                           </div>
                         ) : charityPrograms.length === 0 ? (
-                          <div className="bg-tcm-gray-soft rounded-2xl p-6 text-center">
-                            <Gift className="w-10 h-10 text-tcm-gray-mid mx-auto mb-2" />
-                            <p className="text-tcm-gray-mid text-sm">No active charity programs at the moment.</p>
-                            <p className="text-tcm-gray-mid text-xs mt-1">You can still support us generally below.</p>
+                          <div className="space-y-4">
+                            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-4">
+                              <Gift className="w-8 h-8 text-amber-600 flex-shrink-0 mt-0.5" />
+                              <div>
+                                <p className="font-bold text-amber-800 text-sm mb-1">No active charity programs right now</p>
+                                <p className="text-amber-700 text-xs leading-relaxed">
+                                  TCM has not published any active charity programs yet. You can still support the ministry generally using the button below, or come back later when programs are listed.
+                                </p>
+                              </div>
+                            </div>
+                            <Link
+                              to="/sponsor-registration?type=general"
+                              className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full bg-tcm-gold text-tcm-navy font-black text-sm hover:bg-tcm-gold-lt transition-colors shadow-gold"
+                            >
+                              <Heart className="w-4 h-4" />
+                              Support Ministry Generally Instead
+                            </Link>
                           </div>
                         ) : (
                           <div className="space-y-3">
